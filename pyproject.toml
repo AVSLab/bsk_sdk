@@ -1,0 +1,41 @@
+[build-system]
+requires = ["scikit-build-core>=0.9.3"]
+build-backend = "build_backend"
+backend-path = ["."]
+
+[project]
+name = "bsk-sdk"
+version = "1.0.0"
+description = "Vendored Basilisk SDK headers, runtime, and CMake integration for plugin authors"
+readme = "README.md"
+license = { text = "ISC" }
+requires-python = ">=3.9"
+dependencies = []
+
+[project.entry-points."cmake.prefix"]
+bsk-sdk = "bsk_sdk"
+
+[tool.scikit-build]
+wheel.packages = ["bsk_sdk"]
+wheel.py-api = "cp39"
+wheel.install-dir = "bsk_sdk"
+
+sdist.include = [
+  "CMakeLists.txt",
+  "cmake/**",
+  "src/bsk_sdk/include/**",
+  "src/bsk_sdk/include_compat/**",
+  "src/bsk_sdk/arch_min/**",
+  "src/bsk_sdk/runtime_min/**",
+  "src/bsk_sdk/swig/**",
+  "tools/**",
+  "src/bsk_sdk/__init__.py",
+]
+
+sdist.exclude = [
+  "**/__pycache__/**",
+  "**/*.pyc",
+]
+
+[tool.scikit-build.cmake]
+version = ">=3.18"
