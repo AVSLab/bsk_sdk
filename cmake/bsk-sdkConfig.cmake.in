@@ -12,6 +12,14 @@ set(BSK_SDK_RUNTIME_MIN_DIR    "${BSK_SDK_PKG_DIR}/runtime_min"     CACHE PATH "
 set(BSK_SDK_SWIG_DIR           "${BSK_SDK_PKG_DIR}/swig"            CACHE PATH "bsk-sdk swig dir")
 set(BSK_SDK_TOOLS_DIR          "${BSK_SDK_PKG_DIR}/tools"           CACHE PATH "bsk-sdk tools dir")
 
+# Provide Eigen3::Eigen from bundled headers so plugins are self-contained.
+if(NOT TARGET Eigen3::Eigen)
+  add_library(Eigen3::Eigen IMPORTED INTERFACE GLOBAL)
+  set_target_properties(Eigen3::Eigen PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${BSK_SDK_INCLUDE_DIR}/eigen3"
+  )
+endif()
+
 include("${_bsk_sdk_config_dir}/bsk-sdkTargets.cmake")
 
 function(_bsk_sdk_make_alias_if_needed alias_name real_name)

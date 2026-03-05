@@ -39,3 +39,14 @@ sdist.exclude = [
 
 [tool.scikit-build.cmake]
 version = ">=3.18"
+
+# ---------------------------------------------------------------------------
+# cibuildwheel
+# ---------------------------------------------------------------------------
+[tool.cibuildwheel]
+# Build CPython 3.9–3.13 only; skip PyPy and 32-bit Linux.
+build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+skip  = ["*-musllinux*", "*-manylinux_i686*", "*-win32"]
+
+# Eigen3 is fetched automatically by CMake (FetchContent) if not found locally —
+# no before-all installation step needed on any platform.
