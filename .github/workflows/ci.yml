@@ -29,11 +29,13 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Sync Basilisk artifacts
+      - name: Sync artifacts
         run: python tools/sync_all.py
 
       - name: Build wheel
-        run: pip wheel . --no-build-isolation --no-deps -w dist -v
+        run: |
+          pip install build
+          python -m build --wheel -o dist
 
       - uses: actions/upload-artifact@v4
         with:
@@ -98,12 +100,32 @@ jobs:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist
 
-      - name: Install bsk-sdk wheel
-        run: pip install dist/*.whl
+      - name: Install bsk-sdk wheel and dependencies
+        # Pin swig to the same version used to build the bsk wheel (4.3.1)
+        # so the plugin's SWIG runtime type tables are ABI-compatible.
+        run: pip install dist/*.whl numpy bsk "swig==4.3.1"
+        shell: bash
+
+      - name: Debug SWIG versions
+        run: |
+          python -c "import swig, os, pathlib, subprocess; exe='swig.exe' if os.name=='nt' else 'swig'; p=pathlib.Path(swig.BIN_DIR, exe); ver=subprocess.check_output([str(p),'-version'],text=True).splitlines()[1]; d=pathlib.Path(swig.SWIG_SHARE_DIR, swig.__version__); print('pip swig exe:    ', p); print('pip swig dir:    ', d); print('pip swig version:', ver)"
+          python -c "from Basilisk.simulation import exponentialAtmosphere; import inspect, pathlib; py=pathlib.Path(inspect.getfile(exponentialAtmosphere)); print('bsk swig version:', py.read_text().splitlines()[1])"
         shell: bash
 
       - name: Build example plugin wheel
-        run: pip wheel examples/custom-atm-plugin --no-build-isolation --no-deps -w plugin-dist -v
+        run: |
+          pip install build scikit-build-core
+          # Resolve pip-installed swig paths so CMake finds the right binary AND
+          # lib dir (SWIG_DIR). Without SWIG_DIR, FindSWIG fails because the pip
+          # binary has no compiled-in lib path when called directly by cmake.
+          SWIG_EXE=$(python -c "import swig, os, pathlib; exe='swig.exe' if os.name=='nt' else 'swig'; print(pathlib.Path(swig.BIN_DIR, exe).as_posix())")
+          SWIG_DIR=$(python -c "import swig, pathlib; print(pathlib.Path(swig.SWIG_SHARE_DIR, swig.__version__).as_posix())")
+          export SWIG_LIB="$SWIG_DIR"
+          python -m build --wheel --no-isolation \
+            -C cmake.define.SWIG_EXECUTABLE="$SWIG_EXE" \
+            -C cmake.define.SWIG_DIR="$SWIG_DIR" \
+            -o plugin-dist examples/custom-atm-plugin
+        shell: bash
 
       - uses: actions/upload-artifact@v4
         with:
@@ -116,5 +138,4 @@ jobs:
         shell: bash
 
       - name: Run example plugin tests
-        # Tests skip automatically if Basilisk is not installed.
         run: pytest examples/custom-atm-plugin/test_atm_plugin.py -v

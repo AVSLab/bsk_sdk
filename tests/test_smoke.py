@@ -45,7 +45,7 @@ def test_key_headers_present() -> None:
     include_root = Path(bsk_sdk.include_dir()) / "Basilisk"
     expected = [
         "architecture/_GeneralModuleFiles/sys_model.h",
-        "architecture/messaging/cMsgCInterface/Message_C.h",
+        "architecture/messaging/messaging.h",
         "architecture/utilities/linearAlgebra.h",
         "architecture/utilities/gauss_markov.h",
         "simulation/dynamics/_GeneralModuleFiles/dynamicEffector.h",
