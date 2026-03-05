@@ -1,0 +1,120 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.9", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Sync Basilisk artifacts
+        run: python tools/sync_all.py
+
+      - name: Build wheel
+        run: pip wheel . --no-build-isolation --no-deps -w dist -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-py${{ matrix.python }}
+          path: dist/*.whl
+
+  test:
+    name: Test wheel (${{ matrix.os }}, Python ${{ matrix.python }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.9", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: tests
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-py${{ matrix.python }}
+          path: dist
+
+      - name: Install wheel and test dependencies
+        run: pip install dist/*.whl pytest
+        shell: bash
+
+      - name: Run smoke tests
+        run: pytest tests/test_smoke.py -v
+
+  examples:
+    name: Build example plugin (${{ matrix.os }}, Python ${{ matrix.python }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            examples
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-${{ matrix.os }}-py${{ matrix.python }}
+          path: dist
+
+      - name: Install bsk-sdk wheel
+        run: pip install dist/*.whl
+        shell: bash
+
+      - name: Build example plugin wheel
+        run: pip wheel examples/custom-atm-plugin --no-build-isolation --no-deps -w plugin-dist -v
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-wheel-${{ matrix.os }}-py${{ matrix.python }}
+          path: plugin-dist/*.whl
+          retention-days: 7
+
+      - name: Install plugin wheel and test dependencies
+        run: pip install plugin-dist/*.whl pytest
+        shell: bash
+
+      - name: Run example plugin tests
+        # Tests skip automatically if Basilisk is not installed.
+        run: pytest examples/custom-atm-plugin/test_atm_plugin.py -v
