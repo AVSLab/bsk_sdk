@@ -73,8 +73,12 @@ function(bsk_generate_messages)
   find_package(Eigen3 CONFIG REQUIRED)
 
   if(NOT BSK_TARGET_LINK_LIBS)
-    _bsk_resolve_basilisk_libs(_bsk_libs)
-    set(BSK_TARGET_LINK_LIBS "${_bsk_libs}")
+    if(TARGET bsk::arch_min)
+      set(BSK_TARGET_LINK_LIBS "bsk::arch_min")
+    else()
+      _bsk_resolve_basilisk_libs(_bsk_libs)
+      set(BSK_TARGET_LINK_LIBS "${_bsk_libs}")
+    endif()
   endif()
 
 

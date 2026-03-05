@@ -61,6 +61,63 @@ function(_bsk_resolve_basilisk_libs out_var)
   set(${out_var} "${_libs}" PARENT_SCOPE)
 endfunction()
 
+function(_bsk_find_working_swig out_var)
+  set(_swig_candidates "")
+
+  if(DEFINED SWIG_EXECUTABLE AND SWIG_EXECUTABLE)
+    list(APPEND _swig_candidates "${SWIG_EXECUTABLE}")
+  endif()
+
+  find_program(_swig_on_path NAMES swig)
+  if(_swig_on_path)
+    list(APPEND _swig_candidates "${_swig_on_path}")
+  endif()
+
+  execute_process(
+    COMMAND brew --prefix swig
+    OUTPUT_VARIABLE _brew_swig_prefix
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+    RESULT_VARIABLE _brew_swig_res
+  )
+  if(_brew_swig_res EQUAL 0 AND EXISTS "${_brew_swig_prefix}/bin/swig")
+    list(APPEND _swig_candidates "${_brew_swig_prefix}/bin/swig")
+  endif()
+
+  file(GLOB _cellar_swigs "/opt/homebrew/Cellar/swig/*/bin/swig")
+  list(SORT _cellar_swigs ORDER DESCENDING)
+  if(_cellar_swigs)
+    list(APPEND _swig_candidates ${_cellar_swigs})
+  endif()
+
+  list(REMOVE_DUPLICATES _swig_candidates)
+
+  foreach(_cand IN LISTS _swig_candidates)
+    if(NOT EXISTS "${_cand}")
+      continue()
+    endif()
+
+    execute_process(
+      COMMAND "${_cand}" -version
+      OUTPUT_VARIABLE _swig_stdout
+      ERROR_VARIABLE _swig_stderr
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      ERROR_STRIP_TRAILING_WHITESPACE
+      RESULT_VARIABLE _swig_res
+    )
+
+    if(_swig_res EQUAL 0)
+      string(CONCAT _swig_text "${_swig_stdout}" "\n" "${_swig_stderr}")
+      if(_swig_text MATCHES "SWIG Version")
+        set(${out_var} "${_cand}" PARENT_SCOPE)
+        return()
+      endif()
+    endif()
+  endforeach()
+
+  set(${out_var} "" PARENT_SCOPE)
+endfunction()
+
 function(bsk_add_swig_module)
   set(oneValueArgs TARGET INTERFACE OUTPUT_DIR)
   set(multiValueArgs SOURCES INCLUDE_DIRS SWIG_INCLUDE_DIRS LINK_LIBS DEPENDS)
@@ -74,6 +131,11 @@ function(bsk_add_swig_module)
     set(BSK_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
   endif()
 
+  _bsk_find_working_swig(_bsk_working_swig)
+  if(_bsk_working_swig)
+    set(SWIG_EXECUTABLE "${_bsk_working_swig}" CACHE FILEPATH "Working SWIG executable" FORCE)
+  endif()
+
   find_package(SWIG REQUIRED COMPONENTS python)
   include(${SWIG_USE_FILE})
 
@@ -81,8 +143,12 @@ function(bsk_add_swig_module)
   find_package(Eigen3 CONFIG REQUIRED)
 
   if(NOT BSK_LINK_LIBS)
-    _bsk_resolve_basilisk_libs(_bsk_libs)
-    set(BSK_LINK_LIBS "${_bsk_libs}")
+    if(TARGET bsk::arch_min)
+      set(BSK_LINK_LIBS "bsk::arch_min")
+    else()
+      _bsk_resolve_basilisk_libs(_bsk_libs)
+      set(BSK_LINK_LIBS "${_bsk_libs}")
+    endif()
   endif()
 
   _bsk_collect_swig_flags(_swig_flags)

@@ -22,7 +22,7 @@
 #include "simulation/environment/_GeneralModuleFiles/atmosphereBase.h"
 #include "architecture/utilities/bskLogging.h"
 #include "architecture/messaging/messaging.h"   // ReadFunctor / Message
-#include "customAtmStatusMsgPayload.h"
+#include "CustomAtmStatusMsgPayload.h"
 
 /*! @brief exponential atmosphere model (plugin example) */
 class CustomExponentialAtmosphere : public AtmosphereBase

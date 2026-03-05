@@ -34,7 +34,21 @@ from Basilisk.architecture.swig_common_model import *
 %include "std_vector.i"
 %include "std_string.i"
 
-%include "sys_model.i"
+// IMPORTANT: use %import (not %include) for Basilisk base-class modules.
+//
+// %import tells SWIG "these types live in an existing Python module — do not
+// re-wrap them here."  The generated Python class for this plugin will then
+// inherit from Basilisk's cSysModel.SysModel, which is what Basilisk's
+// simulation task manager expects when you call AddModelToTask().
+//
+// Using %include instead creates a *separate* SysModel type inside this
+// module that is invisible to Basilisk's type system, causing a confusing
+// runtime TypeError even though the C++ inheritance is correct.
+%import "sys_model.i"
+
+// Intermediate base classes that are NOT exposed by any Basilisk Python
+// module can still be %included — SWIG wraps them locally and they inherit
+// from the imported SysModel above, keeping the full chain intact.
 %include "simulation/environment/_GeneralModuleFiles/atmosphereBase.h"
 %include "customExponentialAtmosphere.h"
 

@@ -32,6 +32,25 @@ if(NOT Eigen3_FOUND)
   message(STATUS "bsk-sdk: Eigen3 not found locally — downloaded via FetchContent")
 endif()
 
+# Bundle Eigen3 headers into the wheel so downstream consumers are self-contained.
+# Determine the directory that contains the Eigen/ subfolder.
+if(DEFINED eigen3_SOURCE_DIR)
+  set(_bsk_eigen3_src "${eigen3_SOURCE_DIR}")
+else()
+  get_target_property(_bsk_eigen3_incdirs Eigen3::Eigen INTERFACE_INCLUDE_DIRECTORIES)
+  list(GET _bsk_eigen3_incdirs 0 _bsk_eigen3_src)
+endif()
+
+install(
+  DIRECTORY "${_bsk_eigen3_src}/Eigen"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/eigen3"
+)
+install(
+  DIRECTORY "${_bsk_eigen3_src}/unsupported"
+  DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/eigen3"
+  OPTIONAL
+)
+
 # Header-only SDK target
 add_library(bsk_sdk_headers INTERFACE)
 add_library(bsk::sdk_headers ALIAS bsk_sdk_headers)

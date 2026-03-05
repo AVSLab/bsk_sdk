@@ -18,8 +18,13 @@
 
 import sys
 from Basilisk.architecture import cSysModel as _cSysModel
-from . import customExponentialAtmosphere
 
+# IMPORTANT: register cSysModel under its short name *before* importing the
+# C extension below.  The SWIG-generated wrapper does `import cSysModel` at
+# class-definition time (module load), not at instantiation time.  Without
+# this line the import fails with a confusing ModuleNotFoundError.
 sys.modules.setdefault("cSysModel", _cSysModel)
+
+from . import customExponentialAtmosphere
 
 __all__ = ["customExponentialAtmosphere"]
