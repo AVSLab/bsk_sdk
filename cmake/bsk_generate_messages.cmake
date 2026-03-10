@@ -67,6 +67,9 @@ function(bsk_generate_messages)
     set(BSK_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
   endif()
 
+  find_package(Python3 QUIET COMPONENTS Interpreter)
+  _bsk_setup_pip_swig("${Python3_EXECUTABLE}")
+
   find_package(SWIG REQUIRED COMPONENTS python)
   include(${SWIG_USE_FILE})
   find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)

@@ -10,7 +10,17 @@ description = "Vendored Basilisk SDK headers, runtime, and CMake integration for
 readme = "README.md"
 license = { text = "ISC" }
 requires-python = ">=3.9"
-dependencies = []
+dependencies = [
+  # Plugin authors compile SWIG extensions against bsk. The pip swig package
+  # provides a self-contained binary on all platforms and is detected
+  # automatically by bsk_add_swig_module.cmake via the Python interpreter.
+  #
+  # SWIG 4.4.0 bumped SWIG_RUNTIME_VERSION from "4" to "5", changing the
+  # capsule name from swig_runtime_data4 to swig_runtime_data5. bsk is built
+  # with SWIG 4.3.1 (runtime version 4), so plugins must also use a <4.4
+  # SWIG to share the same type table and make cross-module type casts work.
+  "swig>=4.0,<4.4",
+]
 
 [project.entry-points."cmake.prefix"]
 bsk-sdk = "bsk_sdk"

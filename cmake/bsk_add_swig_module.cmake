@@ -61,61 +61,107 @@ function(_bsk_resolve_basilisk_libs out_var)
   set(${out_var} "${_libs}" PARENT_SCOPE)
 endfunction()
 
-function(_bsk_find_working_swig out_var)
-  set(_swig_candidates "")
-
-  if(DEFINED SWIG_EXECUTABLE AND SWIG_EXECUTABLE)
-    list(APPEND _swig_candidates "${SWIG_EXECUTABLE}")
-  endif()
-
-  find_program(_swig_on_path NAMES swig)
-  if(_swig_on_path)
-    list(APPEND _swig_candidates "${_swig_on_path}")
+# Resolve the pip-installed swig from the active Python interpreter.
+# Creates a thin wrapper script that exports SWIG_LIB before exec'ing the
+# real binary, then sets SWIG_EXECUTABLE to the wrapper and SWIG_DIR for
+# FindSWIG. This ensures every swig invocation by ninja gets the right lib
+# path without any manual configuration from the plugin author.
+function(_bsk_setup_pip_swig python_exe)
+  if(NOT python_exe)
+    return()
   endif()
 
   execute_process(
-    COMMAND brew --prefix swig
-    OUTPUT_VARIABLE _brew_swig_prefix
+    COMMAND "${python_exe}" -c
+      "import swig, os, pathlib; \
+exe = 'swig.exe' if os.name == 'nt' else 'swig'; \
+print(pathlib.Path(swig.BIN_DIR, exe).as_posix(), end='')"
+    OUTPUT_VARIABLE _pip_swig_exe
+    RESULT_VARIABLE _pip_swig_rc
     OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-    RESULT_VARIABLE _brew_swig_res
   )
-  if(_brew_swig_res EQUAL 0 AND EXISTS "${_brew_swig_prefix}/bin/swig")
-    list(APPEND _swig_candidates "${_brew_swig_prefix}/bin/swig")
-  endif()
 
-  file(GLOB _cellar_swigs "/opt/homebrew/Cellar/swig/*/bin/swig")
-  list(SORT _cellar_swigs ORDER DESCENDING)
-  if(_cellar_swigs)
-    list(APPEND _swig_candidates ${_cellar_swigs})
-  endif()
+  execute_process(
+    COMMAND "${python_exe}" -c
+      "import swig, pathlib; \
+print(pathlib.Path(swig.SWIG_SHARE_DIR, swig.__version__).as_posix(), end='')"
+    OUTPUT_VARIABLE _pip_swig_lib
+    RESULT_VARIABLE _pip_swig_lib_rc
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
 
-  list(REMOVE_DUPLICATES _swig_candidates)
+  if(_pip_swig_rc EQUAL 0 AND EXISTS "${_pip_swig_exe}"
+      AND _pip_swig_lib_rc EQUAL 0 AND EXISTS "${_pip_swig_lib}")
+    # SWIG_DIR is needed by FindSWIG during cmake configure to locate swig.swg.
+    set(SWIG_DIR "${_pip_swig_lib}" CACHE PATH "SWIG lib from pip" FORCE)
 
-  foreach(_cand IN LISTS _swig_candidates)
-    if(NOT EXISTS "${_cand}")
-      continue()
+    # set(ENV{SWIG_LIB} ...) only affects the cmake configure process — ninja
+    # subprocesses that invoke swig during the build don't inherit it.  Wrap
+    # the real swig binary in a thin script that exports SWIG_LIB first, then
+    # point SWIG_EXECUTABLE at the wrapper so every swig invocation gets it.
+    if(WIN32)
+      set(_wrapper "${CMAKE_BINARY_DIR}/bsk_swig_wrapper.bat")
+      file(WRITE "${_wrapper}"
+        "@echo off\r\n"
+        "set \"SWIG_LIB=${_pip_swig_lib}\"\r\n"
+        "\"${_pip_swig_exe}\" %*\r\n"
+      )
+    else()
+      set(_wrapper "${CMAKE_BINARY_DIR}/bsk_swig_wrapper.sh")
+      file(WRITE "${_wrapper}"
+        "#!/bin/sh\n"
+        "export SWIG_LIB=\"${_pip_swig_lib}\"\n"
+        "exec \"${_pip_swig_exe}\" \"$@\"\n"
+      )
+      execute_process(COMMAND chmod +x "${_wrapper}")
     endif()
+
+    set(SWIG_EXECUTABLE "${_wrapper}" CACHE FILEPATH "SWIG wrapper from pip" FORCE)
+    message(STATUS "bsk-sdk: using pip SWIG ${_pip_swig_exe} (lib: ${_pip_swig_lib})")
+
+    # Runtime-version guard: SWIG_RUNTIME_VERSION in swigrun.swg determines
+    # the sys.modules capsule name (swig_runtime_dataX).  Modules compiled with
+    # different values cannot share the type table, so cross-module type casts
+    # (e.g. passing a plugin object to Basilisk's AddModelToTask) silently fail.
+    # Detect the mismatch here and abort with a clear message.
+    file(STRINGS "${_pip_swig_lib}/swigrun.swg" _swigrun_lines
+         REGEX "SWIG_RUNTIME_VERSION")
+    set(_plugin_rt "")
+    foreach(_line IN LISTS _swigrun_lines)
+      if(_line MATCHES "#define SWIG_RUNTIME_VERSION \"([0-9]+)\"")
+        set(_plugin_rt "${CMAKE_MATCH_1}")
+      endif()
+    endforeach()
 
     execute_process(
-      COMMAND "${_cand}" -version
-      OUTPUT_VARIABLE _swig_stdout
-      ERROR_VARIABLE _swig_stderr
+      COMMAND "${python_exe}" -c
+        "import sys\n\
+try:\n\
+    import Basilisk.architecture.cSysModel\n\
+    keys = [k for k in sys.modules if k.startswith('swig_runtime_data')]\n\
+    print(keys[0].replace('swig_runtime_data', '') if keys else '', end='')\n\
+except ImportError:\n\
+    print('', end='')"
+      OUTPUT_VARIABLE _bsk_rt
+      RESULT_VARIABLE _bsk_rt_rc
       OUTPUT_STRIP_TRAILING_WHITESPACE
-      ERROR_STRIP_TRAILING_WHITESPACE
-      RESULT_VARIABLE _swig_res
     )
 
-    if(_swig_res EQUAL 0)
-      string(CONCAT _swig_text "${_swig_stdout}" "\n" "${_swig_stderr}")
-      if(_swig_text MATCHES "SWIG Version")
-        set(${out_var} "${_cand}" PARENT_SCOPE)
-        return()
-      endif()
+    if(_plugin_rt AND _bsk_rt AND NOT _plugin_rt STREQUAL _bsk_rt)
+      message(FATAL_ERROR
+        "SWIG runtime version mismatch!\n"
+        "  bsk was compiled with SWIG_RUNTIME_VERSION \"${_bsk_rt}\" "
+        "(capsule: swig_runtime_data${_bsk_rt})\n"
+        "  pip swig ${_pip_swig_exe} uses SWIG_RUNTIME_VERSION \"${_plugin_rt}\" "
+        "(capsule: swig_runtime_data${_plugin_rt})\n\n"
+        "Plugins compiled with this SWIG version cannot exchange objects with "
+        "Basilisk across module boundaries.\n"
+        "Install a SWIG version that matches bsk's runtime epoch.\n"
+        "  bsk-sdk declares: swig>=4.0,<4.4  (runtime version 4, matching bsk 4.3.1)\n"
+        "  Reinstall with:  pip install \"swig>=4.0,<4.4\""
+      )
     endif()
-  endforeach()
-
-  set(${out_var} "" PARENT_SCOPE)
+  endif()
 endfunction()
 
 function(bsk_add_swig_module)
@@ -131,10 +177,8 @@ function(bsk_add_swig_module)
     set(BSK_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}")
   endif()
 
-  _bsk_find_working_swig(_bsk_working_swig)
-  if(_bsk_working_swig)
-    set(SWIG_EXECUTABLE "${_bsk_working_swig}" CACHE FILEPATH "Working SWIG executable" FORCE)
-  endif()
+  find_package(Python3 QUIET COMPONENTS Interpreter)
+  _bsk_setup_pip_swig("${Python3_EXECUTABLE}")
 
   find_package(SWIG REQUIRED COMPONENTS python)
   include(${SWIG_USE_FILE})
