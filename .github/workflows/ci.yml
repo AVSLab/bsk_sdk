@@ -101,30 +101,16 @@ jobs:
           path: dist
 
       - name: Install bsk-sdk wheel and dependencies
-        # Pin swig to the same version used to build the bsk wheel (4.3.1)
-        # so the plugin's SWIG runtime type tables are ABI-compatible.
-        run: pip install dist/*.whl numpy bsk "swig==4.3.1"
-        shell: bash
-
-      - name: Debug SWIG versions
-        run: |
-          python -c "import swig, os, pathlib, subprocess; exe='swig.exe' if os.name=='nt' else 'swig'; p=pathlib.Path(swig.BIN_DIR, exe); ver=subprocess.check_output([str(p),'-version'],text=True).splitlines()[1]; d=pathlib.Path(swig.SWIG_SHARE_DIR, swig.__version__); print('pip swig exe:    ', p); print('pip swig dir:    ', d); print('pip swig version:', ver)"
-          python -c "from Basilisk.simulation import exponentialAtmosphere; import inspect, pathlib; py=pathlib.Path(inspect.getfile(exponentialAtmosphere)); print('bsk swig version:', py.read_text().splitlines()[1])"
+        # swig is a transitive dependency of bsk-sdk; listed explicitly here so
+        # the version is visible. bsk_add_swig_module.cmake auto-configures
+        # SWIG_EXECUTABLE / SWIG_DIR / SWIG_LIB from the pip-installed package.
+        run: pip install dist/*.whl numpy bsk
         shell: bash
 
       - name: Build example plugin wheel
         run: |
           pip install build scikit-build-core
-          # Resolve pip-installed swig paths so CMake finds the right binary AND
-          # lib dir (SWIG_DIR). Without SWIG_DIR, FindSWIG fails because the pip
-          # binary has no compiled-in lib path when called directly by cmake.
-          SWIG_EXE=$(python -c "import swig, os, pathlib; exe='swig.exe' if os.name=='nt' else 'swig'; print(pathlib.Path(swig.BIN_DIR, exe).as_posix())")
-          SWIG_DIR=$(python -c "import swig, pathlib; print(pathlib.Path(swig.SWIG_SHARE_DIR, swig.__version__).as_posix())")
-          export SWIG_LIB="$SWIG_DIR"
-          python -m build --wheel --no-isolation \
-            -C cmake.define.SWIG_EXECUTABLE="$SWIG_EXE" \
-            -C cmake.define.SWIG_DIR="$SWIG_DIR" \
-            -o plugin-dist examples/custom-atm-plugin
+          python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
         shell: bash
 
       - uses: actions/upload-artifact@v4
@@ -139,3 +125,52 @@ jobs:
 
       - name: Run example plugin tests
         run: pytest examples/custom-atm-plugin/test_atm_plugin.py -v
+
+  # Verify that the SWIG 4.x runtime type-table ABI is stable across minor
+  # versions within the same SWIG_RUNTIME_VERSION epoch: bsk is built with
+  # 4.3.1 (SWIG_RUNTIME_VERSION "4"); plugins may use any 4.0–4.3.x release.
+  # SWIG 4.4.0 bumped SWIG_RUNTIME_VERSION to "5", so >=4.4 is incompatible
+  # and excluded here (bsk-sdk pins swig<4.4 to prevent accidental use).
+  swig-compat:
+    name: SWIG compat (plugin=${{ matrix.plugin_swig }}, bsk=4.3.1)
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin_swig: ["4.0.0", "4.2.1", "4.3.1"]
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: examples
+          sparse-checkout-cone-mode: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: wheel-ubuntu-latest-py3.13
+          path: dist
+
+      - name: Install bsk-sdk wheel and dependencies
+        # Install bsk (built with SWIG 4.3.1) then override the swig version
+        # bsk-sdk pulled in so the plugin is compiled with a different release.
+        run: |
+          pip install dist/*.whl numpy bsk
+          pip install "swig==${{ matrix.plugin_swig }}" --force-reinstall
+        shell: bash
+
+      - name: Build example plugin wheel
+        run: |
+          pip install build scikit-build-core
+          python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
+        shell: bash
+
+      - name: Install plugin wheel and run tests
+        run: |
+          pip install plugin-dist/*.whl pytest
+          pytest examples/custom-atm-plugin/test_atm_plugin.py -v
+        shell: bash
