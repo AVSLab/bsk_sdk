@@ -19,7 +19,7 @@ dependencies = [
   # capsule name from swig_runtime_data4 to swig_runtime_data5. bsk is built
   # with SWIG 4.3.1 (runtime version 4), so plugins must also use a <4.4
   # SWIG to share the same type table and make cross-module type casts work.
-  "swig>=4.0,<4.4",
+  "swig>=4.2.1,<=4.3.1",
 ]
 
 [project.entry-points."cmake.prefix"]

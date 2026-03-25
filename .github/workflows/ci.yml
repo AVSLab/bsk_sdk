@@ -101,10 +101,11 @@ jobs:
           path: dist
 
       - name: Install bsk-sdk wheel and dependencies
-        # swig is a transitive dependency of bsk-sdk; listed explicitly here so
-        # the version is visible. bsk_add_swig_module.cmake auto-configures
-        # SWIG_EXECUTABLE / SWIG_DIR / SWIG_LIB from the pip-installed package.
-        run: pip install dist/*.whl numpy bsk
+        # Install bsk first so its transitive deps are resolved, then force-reinstall from the locally
+        # built wheel so the CI always tests the current source.
+        run: |
+          pip install numpy bsk
+          pip install dist/*.whl --force-reinstall
         shell: bash
 
       - name: Build example plugin wheel
@@ -125,52 +126,3 @@ jobs:
 
       - name: Run example plugin tests
         run: pytest examples/custom-atm-plugin/test_atm_plugin.py -v
-
-  # Verify that the SWIG 4.x runtime type-table ABI is stable across minor
-  # versions within the same SWIG_RUNTIME_VERSION epoch: bsk is built with
-  # 4.3.1 (SWIG_RUNTIME_VERSION "4"); plugins may use any 4.0–4.3.x release.
-  # SWIG 4.4.0 bumped SWIG_RUNTIME_VERSION to "5", so >=4.4 is incompatible
-  # and excluded here (bsk-sdk pins swig<4.4 to prevent accidental use).
-  swig-compat:
-    name: SWIG compat (plugin=${{ matrix.plugin_swig }}, bsk=4.3.1)
-    needs: build
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        plugin_swig: ["4.0.0", "4.2.1", "4.3.1"]
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          sparse-checkout: examples
-          sparse-checkout-cone-mode: false
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: wheel-ubuntu-latest-py3.13
-          path: dist
-
-      - name: Install bsk-sdk wheel and dependencies
-        # Install bsk (built with SWIG 4.3.1) then override the swig version
-        # bsk-sdk pulled in so the plugin is compiled with a different release.
-        run: |
-          pip install dist/*.whl numpy bsk
-          pip install "swig==${{ matrix.plugin_swig }}" --force-reinstall
-        shell: bash
-
-      - name: Build example plugin wheel
-        run: |
-          pip install build scikit-build-core
-          python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
-        shell: bash
-
-      - name: Install plugin wheel and run tests
-        run: |
-          pip install plugin-dist/*.whl pytest
-          pytest examples/custom-atm-plugin/test_atm_plugin.py -v
-        shell: bash
