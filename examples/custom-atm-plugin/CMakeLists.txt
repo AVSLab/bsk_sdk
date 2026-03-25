@@ -3,21 +3,6 @@ project(bsk_plugin_exponential_atmosphere LANGUAGES C CXX)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
 
-# Force SWIG invocation through the active Python environment to avoid picking
-# a system SWIG launcher bound to a different Python/runtime context.
-execute_process(
-  COMMAND "${Python3_EXECUTABLE}" -c "import swig; print(swig.__version__, end='')"
-  OUTPUT_VARIABLE py_swig_version
-  RESULT_VARIABLE py_swig_rc
-)
-if(py_swig_rc EQUAL 0)
-  set(_swig_wrapper "${CMAKE_CURRENT_BINARY_DIR}/swig_from_python")
-  file(WRITE "${_swig_wrapper}" "#!/bin/sh\nexec \"${Python3_EXECUTABLE}\" -m swig \"$@\"\n")
-  execute_process(COMMAND chmod +x "${_swig_wrapper}")
-  set(SWIG_EXECUTABLE "${_swig_wrapper}" CACHE FILEPATH "SWIG executable" FORCE)
-  message(STATUS "Using Python SWIG ${py_swig_version} via ${SWIG_EXECUTABLE}")
-endif()
-
 # Locate bsk-sdk's CMake config dir from the active Python env
 execute_process(
   COMMAND "${Python3_EXECUTABLE}" -c "import bsk_sdk; print(bsk_sdk.cmake_config_dir(), end='')"

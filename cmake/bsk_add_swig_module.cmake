@@ -62,20 +62,28 @@ function(_bsk_resolve_basilisk_libs out_var)
 endfunction()
 
 # Resolve the pip-installed swig from the active Python interpreter.
-# Creates a thin wrapper script that exports SWIG_LIB before exec'ing the
-# real binary, then sets SWIG_EXECUTABLE to the wrapper and SWIG_DIR for
-# FindSWIG. This ensures every swig invocation by ninja gets the right lib
-# path without any manual configuration from the plugin author.
+# Uses importlib.util.find_spec to locate the package directory (handles both
+# regular and namespace packages — swig.__file__ is None on macOS framework
+# Python). Creates a thin wrapper that exports SWIG_LIB before exec'ing the
+# binary so every swig invocation by ninja gets the right lib path without any
+# manual configuration from the plugin author.
 function(_bsk_setup_pip_swig python_exe)
   if(NOT python_exe)
     return()
   endif()
 
+  # Locate the pip swig binary and lib dir by scanning sys.path for the
+  # nightlark swig-pypi package layout (swig/data/bin/ and swig/data/share/).
+  # This avoids importlib.util.find_spec / importlib.metadata which are
+  # unreliable on macOS framework Python (namespace packages, missing dist-info).
   execute_process(
     COMMAND "${python_exe}" -c
-      "import swig, os, pathlib; \
+      "import sys, pathlib, os; \
 exe = 'swig.exe' if os.name == 'nt' else 'swig'; \
-print(pathlib.Path(swig.BIN_DIR, exe).as_posix(), end='')"
+result = next((str(pathlib.Path(p) / 'swig' / 'data' / 'bin' / exe) \
+  for p in sys.path \
+  if (pathlib.Path(p) / 'swig' / 'data' / 'bin' / exe).exists()), ''); \
+print(result, end='')"
     OUTPUT_VARIABLE _pip_swig_exe
     RESULT_VARIABLE _pip_swig_rc
     OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -83,22 +91,42 @@ print(pathlib.Path(swig.BIN_DIR, exe).as_posix(), end='')"
 
   execute_process(
     COMMAND "${python_exe}" -c
-      "import swig, pathlib; \
-print(pathlib.Path(swig.SWIG_SHARE_DIR, swig.__version__).as_posix(), end='')"
+      "import sys, pathlib\n\
+result = ''\n\
+for p in sys.path:\n\
+    share = pathlib.Path(p) / 'swig' / 'data' / 'share' / 'swig'\n\
+    if share.exists():\n\
+        dirs = sorted(d for d in share.iterdir() if d.is_dir())\n\
+        if dirs:\n\
+            result = dirs[-1].as_posix()\n\
+            break\n\
+print(result, end='')"
     OUTPUT_VARIABLE _pip_swig_lib
     RESULT_VARIABLE _pip_swig_lib_rc
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-  if(_pip_swig_rc EQUAL 0 AND EXISTS "${_pip_swig_exe}"
+  # Validate the binary actually works before trusting the path.
+  if(_pip_swig_rc EQUAL 0 AND EXISTS "${_pip_swig_exe}")
+    execute_process(
+      COMMAND "${_pip_swig_exe}" -version
+      RESULT_VARIABLE _pip_swig_works
+      OUTPUT_QUIET ERROR_QUIET
+    )
+  else()
+    set(_pip_swig_works 1)  # force skip
+  endif()
+
+  if(_pip_swig_works EQUAL 0
       AND _pip_swig_lib_rc EQUAL 0 AND EXISTS "${_pip_swig_lib}")
     # SWIG_DIR is needed by FindSWIG during cmake configure to locate swig.swg.
     set(SWIG_DIR "${_pip_swig_lib}" CACHE PATH "SWIG lib from pip" FORCE)
 
-    # set(ENV{SWIG_LIB} ...) only affects the cmake configure process — ninja
-    # subprocesses that invoke swig during the build don't inherit it.  Wrap
-    # the real swig binary in a thin script that exports SWIG_LIB first, then
-    # point SWIG_EXECUTABLE at the wrapper so every swig invocation gets it.
+    # set(ENV{SWIG_LIB} ...) covers cmake configure-time invocations (e.g.
+    # FindSWIG calling the binary to check its version).  It does NOT propagate
+    # to ninja subprocesses that invoke swig during the build, so we also wrap
+    # the real binary in a thin script that exports SWIG_LIB first.
+    set(ENV{SWIG_LIB} "${_pip_swig_lib}")
     if(WIN32)
       set(_wrapper "${CMAKE_BINARY_DIR}/bsk_swig_wrapper.bat")
       file(WRITE "${_wrapper}"
@@ -157,8 +185,8 @@ except ImportError:\n\
         "Plugins compiled with this SWIG version cannot exchange objects with "
         "Basilisk across module boundaries.\n"
         "Install a SWIG version that matches bsk's runtime epoch.\n"
-        "  bsk-sdk declares: swig>=4.0,<4.4  (runtime version 4, matching bsk 4.3.1)\n"
-        "  Reinstall with:  pip install \"swig>=4.0,<4.4\""
+        "  bsk-sdk declares: swig>=4.2.1,<=4.3.1  (runtime version 4, matching bsk)\n"
+        "  Reinstall with:  pip install \"swig>=4.2.1,<=4.3.1\""
       )
     endif()
   endif()
