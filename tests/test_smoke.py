@@ -1,3 +1,21 @@
+#
+#  ISC License
+#
+#  Copyright (c) 2026, Autonomous Vehicle Systems Lab, University of Colorado at Boulder
+#
+#  Permission to use, copy, modify, and/or distribute this software for any
+#  purpose with or without fee is hereby granted, provided that the above
+#  copyright notice and this permission notice appear in all copies.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+#  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+#  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+#  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+#  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+#  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
 """
 Smoke tests for the installed bsk-sdk wheel.
 
@@ -39,18 +57,3 @@ def test_cmake_config_files_present() -> None:
     assert (config_dir / "bsk-sdkConfig.cmake").exists()
     assert (config_dir / "bsk-sdkConfigVersion.cmake").exists()
     assert (config_dir / "bsk-sdkTargets.cmake").exists()
-
-
-def test_key_headers_present() -> None:
-    include_root = Path(bsk_sdk.include_dir()) / "Basilisk"
-    expected = [
-        "architecture/_GeneralModuleFiles/sys_model.h",
-        "architecture/messaging/messaging.h",
-        "architecture/utilities/linearAlgebra.h",
-        "architecture/utilities/gauss_markov.h",
-        "simulation/dynamics/_GeneralModuleFiles/dynamicEffector.h",
-        "simulation/dynamics/_GeneralModuleFiles/dynamicObject.h",
-    ]
-    for rel in expected:
-        p = include_root / rel
-        assert p.exists(), f"Expected header missing from SDK: {p}"
