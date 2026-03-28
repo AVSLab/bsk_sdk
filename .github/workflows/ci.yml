@@ -1,3 +1,21 @@
+#
+#  ISC License
+#
+#  Copyright (c) 2026, Autonomous Vehicle Systems Lab, University of Colorado at Boulder
+#
+#  Permission to use, copy, modify, and/or distribute this software for any
+#  purpose with or without fee is hereby granted, provided that the above
+#  copyright notice and this permission notice appear in all copies.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+#  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+#  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+#  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+#  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+#  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
 name: CI
 
 on:
@@ -12,13 +30,18 @@ concurrency:
 
 jobs:
   build:
-    name: Build (${{ matrix.os }}, Python ${{ matrix.python }})
+    name: Build (${{ matrix.os }}, ${{ matrix.python_label }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ["3.9", "3.13"]
+        python: ["3.9", "3.14"]
+        include:
+          - python: "3.9"
+            python_label: "MIN Python"
+          - python: "3.14"
+            python_label: "MAX Python"
 
     steps:
       - uses: actions/checkout@v4
@@ -43,14 +66,19 @@ jobs:
           path: dist/*.whl
 
   test:
-    name: Test wheel (${{ matrix.os }}, Python ${{ matrix.python }})
+    name: Test wheel (${{ matrix.os }}, ${{ matrix.python_label }})
     needs: build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ["3.9", "3.13"]
+        python: ["3.9", "3.14"]
+        include:
+          - python: "3.9"
+            python_label: "MIN Python"
+          - python: "3.14"
+            python_label: "MAX Python"
 
     steps:
       - uses: actions/checkout@v4
@@ -75,14 +103,19 @@ jobs:
         run: pytest tests/test_smoke.py -v
 
   examples:
-    name: Build example plugin (${{ matrix.os }}, Python ${{ matrix.python }})
+    name: Build example plugin (${{ matrix.os }}, ${{ matrix.python_label }})
     needs: build
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ["3.13"]
+        python: ["3.9", "3.14"]
+        include:
+          - python: "3.9"
+            python_label: "MIN Python"
+          - python: "3.14"
+            python_label: "MAX Python"
 
     steps:
       - uses: actions/checkout@v4
@@ -125,4 +158,4 @@ jobs:
         shell: bash
 
       - name: Run example plugin tests
-        run: pytest examples/custom-atm-plugin/test_atm_plugin.py -v
+        run: pytest examples/custom-atm-plugin/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
