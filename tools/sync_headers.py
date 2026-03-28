@@ -26,20 +26,7 @@ Copies selected directories from the main Basilisk `src/` tree into:
 
     sdk/src/bsk_sdk/include/Basilisk/
 
-Only the headers that plugin authors need to compile against are included —
-not the full Basilisk source tree. Specifically:
-
-  - architecture/_GeneralModuleFiles  sys_model.h base class for all modules
-  - architecture/messaging            message subscription/publication infrastructure
-  - architecture/utilities            logging, linearAlgebra, gaussMarkov, moduleId, etc.
-  - architecture/msgPayloadDefC       C message payload structs
-  - architecture/msgPayloadDefCpp     C++ message payload structs
-  - fswAlgorithms/fswUtilities        common FSW utility headers
-  - simulation/environment/_GeneralModuleFiles  atmosphereBase.h (needed by runtime_min)
-  - simulation/dynamics/_GeneralModuleFiles     dynamicEffector.h, dynamicObject.h base classes
-  - simulation/dynamics/reactionWheels          RW base classes for custom RW plugin authors
-
-This script is intended to be run by Basilisk maintainers when updating the SDK.
+Only the headers that plugin authors need to compile against are included.
 """
 
 from __future__ import annotations
@@ -54,20 +41,26 @@ from _sync_paths import SDK_REPO_ROOT, resolve_basilisk_src_root
 
 SDK_INCLUDE_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "include" / "Basilisk"
 
-# Directories to vendor into the SDK, relative to src/.
+# Top-level directories to vendor into the SDK, relative to src/.
 DIRECTORIES = [
-    "architecture/_GeneralModuleFiles",
-    "architecture/messaging",
-    "architecture/utilities",
-    "architecture/msgPayloadDefC",
-    "architecture/msgPayloadDefCpp",
+    "architecture",
     "fswAlgorithms/fswUtilities",
-    "simulation/dynamics/_GeneralModuleFiles",
-    "simulation/dynamics/reactionWheels",
-    "simulation/environment/_GeneralModuleFiles",
-    "simulation/power/_GeneralModuleFiles",
-    "simulation/onboardDataHandling/_GeneralModuleFiles",
+    # Note general module files are handled separately below
 ]
+
+
+def _discover_general_module_dirs(src_root: Path) -> list[str]:
+    """Auto-discover ``_GeneralModuleFiles`` directories under fswAlgorithms/ and simulation/."""
+    found: list[str] = []
+    for top in ("fswAlgorithms", "simulation"):
+        top_dir = src_root / top
+        if not top_dir.exists():
+            continue
+        for gmf in sorted(top_dir.rglob("_GeneralModuleFiles")):
+            if gmf.is_dir():
+                found.append(str(gmf.relative_to(src_root)))
+    return found
+
 
 # Things that must be excluded from the SDK
 IGNORE_PATTERNS = [
@@ -114,7 +107,9 @@ def main() -> None:
 
     SDK_INCLUDE_ROOT.mkdir(parents=True, exist_ok=True)
 
-    for relative in DIRECTORIES:
+    all_dirs = list(DIRECTORIES) + _discover_general_module_dirs(src_root)
+
+    for relative in all_dirs:
         src_dir = src_root / relative
         dest_dir = SDK_INCLUDE_ROOT / relative
 
