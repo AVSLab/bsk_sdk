@@ -4,6 +4,7 @@ src/bsk_sdk/arch_min/*
 src/bsk_sdk/include_compat/*
 src/bsk_sdk/runtime_min/*
 src/bsk_sdk/swig/*
+tools/msgAutoSource/*
 
 # Standard Python ignores
 # Byte-compiled / optimized / DLL files
