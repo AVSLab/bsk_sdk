@@ -53,6 +53,11 @@ def _required_sync_paths(repo_root: Path) -> list[Path]:
     ]
 
 
+def _required_sync_files(repo_root: Path) -> list[Path]:
+    """Return individual files that must exist before a build can proceed."""
+    return [repo_root / "src" / "bsk_sdk" / "_bsk_version.txt"]
+
+
 def _has_any_file(path: Path) -> bool:
     """Return True if path is a directory containing at least one regular file."""
     if not path.exists() or not path.is_dir():
@@ -63,6 +68,7 @@ def _has_any_file(path: Path) -> bool:
 def _assert_synced_artifacts(repo_root: Path) -> None:
     """Raise :class:`RuntimeError` if any required sync artifact directories are missing or empty."""
     missing = [p for p in _required_sync_paths(repo_root) if not _has_any_file(p)]
+    missing += [p for p in _required_sync_files(repo_root) if not p.exists()]
     if not missing:
         return
 

@@ -45,6 +45,11 @@ def package_root() -> Path:
     return Path(resources.files(__package__))
 
 
+def bsk_version() -> str:
+    """Return the Basilisk version this SDK was synced from."""
+    return (package_root() / "_bsk_version.txt").read_text().strip()
+
+
 def cmake_config_dir() -> str:
     return str(package_root() / "lib" / "cmake" / "bsk-sdk")
 
@@ -76,6 +81,7 @@ def msg_autosource_dir() -> str:
 
 __all__ = [
     "package_root",
+    "bsk_version",
     "cmake_config_dir",
     "include_dir",
     "include_dirs",

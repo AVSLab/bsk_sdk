@@ -33,6 +33,43 @@ _bsk_sdk_make_alias_if_needed(bsk::arch_min     bsk::bsk_arch_min)
 _bsk_sdk_make_alias_if_needed(bsk::runtime_min  bsk::bsk_runtime_min)
 _bsk_sdk_make_alias_if_needed(bsk::plugin       bsk::bsk_plugin)
 
+# Read the BSK version this SDK was synced from.
+file(STRINGS "${_bsk_sdk_pkg_dir}/_bsk_version.txt" BSK_SDK_BSK_VERSION LIMIT_COUNT 1)
+
+# Validate the installed Basilisk version matches the SDK at configure time.
+function(_bsk_sdk_check_basilisk_version)
+  find_package(Python3 QUIET COMPONENTS Interpreter)
+  if(NOT Python3_FOUND)
+    return()
+  endif()
+
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c
+      "try:\n    import Basilisk; print(Basilisk.__version__, end='')\nexcept Exception:\n    print('', end='')"
+    OUTPUT_VARIABLE _bsk_installed_version
+    RESULT_VARIABLE _rc
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+
+  if(NOT _rc EQUAL 0 OR _bsk_installed_version STREQUAL "")
+    return()
+  endif()
+
+  if(NOT _bsk_installed_version VERSION_EQUAL BSK_SDK_BSK_VERSION)
+    message(FATAL_ERROR
+      "Basilisk version mismatch!\n"
+      "  bsk-sdk was synced from Basilisk ${BSK_SDK_BSK_VERSION}\n"
+      "  Installed Basilisk is ${_bsk_installed_version}\n\n"
+      "Plugins compiled against mismatched headers will have ABI incompatibilities.\n"
+      "Either install the matching Basilisk version or re-sync the SDK:\n"
+      "  pip install basilisk==${BSK_SDK_BSK_VERSION}\n"
+      "  # or: cd external/basilisk && git checkout v${_bsk_installed_version} && cd ../.. && python3 tools/sync_all.py"
+    )
+  endif()
+endfunction()
+
+_bsk_sdk_check_basilisk_version()
+
 include("${_bsk_sdk_config_dir}/bsk_add_swig_module.cmake")
 include("${_bsk_sdk_config_dir}/bsk_generate_messages.cmake")
 

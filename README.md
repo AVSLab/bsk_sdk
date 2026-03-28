@@ -51,3 +51,13 @@ git fetch && git checkout <tag-or-commit>
 cd ../..
 python3 tools/sync_all.py
 ```
+
+## Versioning
+
+The `bsk-sdk` package version tracks the Basilisk version it was synced from
+(e.g. `bsk-sdk==2.9.1` contains headers from Basilisk `v2.9.1`).
+
+At CMake configure time, the SDK checks that the installed Basilisk version
+matches and errors out on a mismatch. This prevents silent ABI
+incompatibilities where plugins are compiled against headers from one Basilisk
+version but linked against a different runtime.

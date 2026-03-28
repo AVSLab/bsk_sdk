@@ -26,10 +26,30 @@ import subprocess
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).parent))
+from _sync_paths import resolve_basilisk_root
+
 
 def run(cmd: list[str], cwd: Path) -> None:
     print(f"\n==> {' '.join(cmd)}")
     subprocess.run(cmd, cwd=str(cwd), check=True)
+
+
+BSK_VERSION_FILE = "docs/source/bskVersion.txt"
+
+
+def stamp_bsk_version(bsk_root: Path, repo_root: Path) -> None:
+    """Read bskVersion.txt from Basilisk and write it into the SDK package."""
+    version_file = bsk_root / BSK_VERSION_FILE
+    if not version_file.exists():
+        raise FileNotFoundError(
+            f"Basilisk version file not found: {version_file}\n"
+            "Is the Basilisk root correct?"
+        )
+    bsk_version = version_file.read_text().strip()
+    dst = repo_root / "src" / "bsk_sdk" / "_bsk_version.txt"
+    dst.write_text(bsk_version + "\n")
+    print(f"\n[bsk-sdk] Stamped BSK version: {bsk_version} -> {dst}")
 
 
 def sync_basilisk_submodule(repo_root: Path) -> None:
@@ -81,6 +101,10 @@ def main() -> int:
 
     if args.sync_submodules:
         sync_basilisk_submodule(repo_root)
+
+    # Stamp BSK version from the resolved Basilisk source tree.
+    bsk_root = resolve_basilisk_root(basilisk_root)
+    stamp_bsk_version(bsk_root, repo_root)
 
     scripts = [
         "sync_headers.py",
