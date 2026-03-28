@@ -45,6 +45,10 @@ SDK_INCLUDE_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "include" / "Basilisk"
 DIRECTORIES = [
     "architecture",
     "fswAlgorithms/fswUtilities",
+    # reactionWheels is referenced by auto-generated SWIG interfaces; not a
+    # _GeneralModuleFiles dir so it must be listed explicitly until upstream
+    # BSK restructures it.
+    "simulation/dynamics/reactionWheels",
     # Note general module files are handled separately below
 ]
 
