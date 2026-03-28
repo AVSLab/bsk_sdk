@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18)
 
-# We compile both C and C++ sources (linearAlgebra.c etc.)
+# Compile both C and C++ sources
 project(bsk_sdk LANGUAGES C CXX)
 
 include(CMakePackageConfigHelpers)
@@ -14,7 +14,6 @@ set(BSK_SDK_COMPAT_INCLUDE_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/inclu
 set(BSK_SDK_SWIG_SRC_DIR          "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/swig")
 set(BSK_SDK_TOOLS_SRC_DIR         "${CMAKE_CURRENT_SOURCE_DIR}/tools")
 
-# Prefer a system/vcpkg/conda Eigen3; fall back to downloading it automatically.
 find_package(Eigen3 CONFIG QUIET)
 if(NOT Eigen3_FOUND)
   include(FetchContent)
@@ -24,7 +23,6 @@ if(NOT Eigen3_FOUND)
     URL_HASH SHA256=8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72
     DOWNLOAD_EXTRACT_TIMESTAMP ON
   )
-  # Eigen3 is header-only — skip tests and install rules.
   set(EIGEN_BUILD_DOC     OFF CACHE BOOL "" FORCE)
   set(BUILD_TESTING       OFF CACHE BOOL "" FORCE)
   set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
@@ -33,7 +31,6 @@ if(NOT Eigen3_FOUND)
 endif()
 
 # Bundle Eigen3 headers into the wheel so downstream consumers are self-contained.
-# Determine the directory that contains the Eigen/ subfolder.
 if(DEFINED eigen3_SOURCE_DIR)
   set(_bsk_eigen3_src "${eigen3_SOURCE_DIR}")
 else()
@@ -166,7 +163,9 @@ install(
 )
 
 install(
-  FILES "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/__init__.py"
+  FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/__init__.py"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/_bsk_version.txt"
   DESTINATION "."
 )
 
