@@ -26,6 +26,10 @@ Copies into:
 
     sdk/src/bsk_sdk/swig/...
 
+and also syncs the message auto-source tools from the Basilisk repo into:
+
+    sdk/tools/msgAutoSource/
+
 So plugin builds can depend solely on the installed `bsk-sdk` package.
 """
 
@@ -40,15 +44,18 @@ sys.path.insert(0, str(Path(__file__).parent))
 from _sync_paths import SDK_REPO_ROOT, resolve_basilisk_root
 
 SDK_SWIG_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "swig"
+SDK_MSG_AUTOSOURCE_ROOT = SDK_REPO_ROOT / "tools" / "msgAutoSource"
 
 SWIG_FILES: list[str] = [
     "src/architecture/_GeneralModuleFiles/swig_conly_data.i",
     "src/architecture/_GeneralModuleFiles/swig_std_array.i",
     "src/architecture/_GeneralModuleFiles/swig_eigen.i",
     "src/architecture/_GeneralModuleFiles/sys_model.i",
-    "src/architecture/_GeneralModuleFiles/sys_model.h",
     "src/architecture/utilities/bskException.swg",
 ]
+
+# msgAutoSource directory in BSK, relative to basilisk root.
+BSK_MSG_AUTOSOURCE = "src/architecture/messaging/msgAutoSource"
 
 
 def copy_file(src: Path, dst: Path) -> None:
@@ -96,6 +103,25 @@ def main() -> None:
         copied.append(dst)
 
     print(f"[bsk-sdk] SWIG synchronization complete ({len(copied)} files).")
+
+    # Sync msgAutoSource tools from BSK
+    bsk_msg_auto = basilisk_root / BSK_MSG_AUTOSOURCE
+    if not bsk_msg_auto.is_dir():
+        raise FileNotFoundError(
+            f"[bsk-sdk] Missing msgAutoSource directory:\n  {bsk_msg_auto}"
+        )
+
+    SDK_MSG_AUTOSOURCE_ROOT.mkdir(parents=True, exist_ok=True)
+    msg_copied = 0
+    for src_file in sorted(bsk_msg_auto.iterdir()):
+        if not src_file.is_file():
+            continue
+        dst = SDK_MSG_AUTOSOURCE_ROOT / src_file.name
+        print(f"[bsk-sdk] Copying {src_file} -> {dst}")
+        shutil.copy2(src_file, dst)
+        msg_copied += 1
+
+    print(f"[bsk-sdk] msgAutoSource synchronization complete ({msg_copied} files).")
 
 
 if __name__ == "__main__":

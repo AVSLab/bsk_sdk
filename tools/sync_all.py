@@ -76,7 +76,7 @@ def main() -> int:
         else Path(__file__).resolve().parent
     )
     py = args.python
-    basilisk_root = args.basilisk_root
+    basilisk_root = str(Path(args.basilisk_root).resolve()) if args.basilisk_root else None
     repo_root = tools_dir.parent
 
     if args.sync_submodules:
