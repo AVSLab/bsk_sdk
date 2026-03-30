@@ -46,14 +46,6 @@ from _sync_paths import SDK_REPO_ROOT, resolve_basilisk_root
 SDK_SWIG_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "swig"
 SDK_MSG_AUTOSOURCE_ROOT = SDK_REPO_ROOT / "tools" / "msgAutoSource"
 
-SWIG_FILES: list[str] = [
-    "src/architecture/_GeneralModuleFiles/swig_conly_data.i",
-    "src/architecture/_GeneralModuleFiles/swig_std_array.i",
-    "src/architecture/_GeneralModuleFiles/swig_eigen.i",
-    "src/architecture/_GeneralModuleFiles/sys_model.i",
-    "src/architecture/utilities/bskException.swg",
-]
-
 # msgAutoSource directory in BSK, relative to basilisk root.
 BSK_MSG_AUTOSOURCE = "src/architecture/messaging/msgAutoSource"
 
@@ -75,32 +67,25 @@ def main() -> None:
     args = ap.parse_args()
 
     basilisk_root = resolve_basilisk_root(args.basilisk_root)
+    arch_src = basilisk_root / "src" / "architecture"
 
     SDK_SWIG_ROOT.mkdir(parents=True, exist_ok=True)
 
+    # Auto-discover all .i and .swg files under architecture/_GeneralModuleFiles
+    # and architecture/utilities, mirroring the structure under swig/.
+    swig_src_dirs = [
+        arch_src / "_GeneralModuleFiles",
+        arch_src / "utilities",
+    ]
+
     copied: list[Path] = []
-    for rel in SWIG_FILES:
-        src = basilisk_root / rel
-        if not src.exists():
-            raise FileNotFoundError(
-                f"[bsk-sdk] Missing SWIG support file:\n  {src}\n\n"
-                "Update sdk/tools/sync_swig.py (SWIG_FILES) to match repo layout."
-            )
-
-        rel_path = Path(rel)
-
-        # Strip leading "src/" so SWIG includes like:
-        #   %include "architecture/_GeneralModuleFiles/sys_model.i"
-        # work when you pass -I${BSK_SDK_SWIG_DIR}
-        if rel_path.parts and rel_path.parts[0] == "src":
-            rel_under_swig = Path(*rel_path.parts[1:])
-        else:
-            rel_under_swig = rel_path.name
-
-        dst = SDK_SWIG_ROOT / rel_under_swig
-        print(f"[bsk-sdk] Copying {src} -> {dst}")
-        copy_file(src, dst)
-        copied.append(dst)
+    for src_dir in swig_src_dirs:
+        for src in sorted(src_dir.glob("*.i")) + sorted(src_dir.glob("*.swg")):
+            rel_under_swig = Path("architecture") / src_dir.name / src.name
+            dst = SDK_SWIG_ROOT / rel_under_swig
+            print(f"[bsk-sdk] Copying {src} -> {dst}")
+            copy_file(src, dst)
+            copied.append(dst)
 
     print(f"[bsk-sdk] SWIG synchronization complete ({len(copied)} files).")
 
