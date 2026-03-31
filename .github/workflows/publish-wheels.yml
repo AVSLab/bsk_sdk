@@ -40,11 +40,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+
+      - name: Determine BSK release tag
+        id: bsk-tag
+        run: |
+          BSK_TAG=$(python -c "
+          import tomllib
+          with open('pyproject.toml', 'rb') as f:
+              version = tomllib.load(f)['project']['version']
+          print('v' + version)
+          ")
+          echo "tag=$BSK_TAG" >> $GITHUB_OUTPUT
+
+      - name: Checkout Basilisk submodule at release tag
+        run: |
+          git submodule init external/basilisk
+          cd external/basilisk
+          git fetch origin tag ${{ steps['bsk-tag'].outputs.tag }} --no-tags --depth 1
+          git checkout ${{ steps['bsk-tag'].outputs.tag }}
 
       - name: Sync Basilisk artifacts (host)
         run: python tools/sync_all.py
@@ -67,11 +85,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+
+      - name: Determine BSK release tag
+        id: bsk-tag
+        run: |
+          BSK_TAG=$(python -c "
+          import tomllib
+          with open('pyproject.toml', 'rb') as f:
+              version = tomllib.load(f)['project']['version']
+          print('v' + version)
+          ")
+          echo "tag=$BSK_TAG" >> $GITHUB_OUTPUT
+
+      - name: Checkout Basilisk submodule at release tag
+        run: |
+          git submodule init external/basilisk
+          cd external/basilisk
+          git fetch origin tag ${{ steps['bsk-tag'].outputs.tag }} --no-tags --depth 1
+          git checkout ${{ steps['bsk-tag'].outputs.tag }}
 
       - name: Sync Basilisk artifacts
         run: python tools/sync_all.py

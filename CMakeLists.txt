@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.26)
 
 # Compile both C and C++ sources
 project(bsk_sdk LANGUAGES C CXX)
