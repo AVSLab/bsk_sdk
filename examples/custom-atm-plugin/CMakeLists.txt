@@ -1,7 +1,7 @@
 # =============================================================================
 # Boilerplate: Copy and Paste this section as is, and modify the section below.
 # =============================================================================
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.26)
 project(bsk_plugin_exponential_atmosphere LANGUAGES C CXX)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
