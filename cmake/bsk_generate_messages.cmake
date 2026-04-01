@@ -102,7 +102,7 @@ function(bsk_generate_messages)
     set(_xml_out "${_xml_dir}/${_payload_name}.xml")
     add_custom_command(
       OUTPUT "${_xml_out}"
-      COMMAND ${SWIG_EXECUTABLE} -c++ -xml -module dummy -o "${_xml_out}" "${_hdr_abs}"
+      COMMAND ${SWIG_EXECUTABLE} -c++ -xml -module dummy ${_swig_flags} -o "${_xml_out}" "${_hdr_abs}"
       DEPENDS "${_hdr_abs}"
       COMMENT "Generating SWIG XML for ${_payload_name}"
       VERBATIM
