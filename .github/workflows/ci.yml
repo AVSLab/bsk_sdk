@@ -142,14 +142,14 @@ jobs:
         shell: bash
 
       - name: Build example plugin wheel
-        # PIP_FIND_LINKS tells the isolated PEP 517 build environment to prefer
-        # the locally built bsk-sdk wheel over whatever is published on PyPI,
-        # so this step always validates the current branch's SDK artifact.
-        env:
-          PIP_FIND_LINKS: dist
+        # Use --no-isolation so the build inherits the environment where the
+        # locally built bsk-sdk wheel is already installed.  This guarantees CI
+        # always tests the current branch's SDK — never a stale PyPI version.
+        # (The example's pyproject.toml build-system.requires is still correct
+        # for real users doing normal isolated builds from PyPI.)
         run: |
           pip install build scikit-build-core
-          python -m build --wheel -o plugin-dist examples/custom-atm-plugin
+          python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
         shell: bash
 
       - uses: actions/upload-artifact@v4
