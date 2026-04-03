@@ -59,10 +59,11 @@ jobs:
 
       - name: Checkout Basilisk submodule at release tag
         run: |
-          git submodule init external/basilisk
-          cd external/basilisk
-          git fetch origin tag ${{ steps['bsk-tag'].outputs.tag }} --no-tags --depth 1
-          git checkout ${{ steps['bsk-tag'].outputs.tag }}
+          git submodule update --init --depth 1 external/basilisk
+          git -C external/basilisk fetch origin \
+            refs/tags/${{ steps['bsk-tag'].outputs.tag }}:refs/tags/${{ steps['bsk-tag'].outputs.tag }} \
+            --depth 1
+          git -C external/basilisk checkout ${{ steps['bsk-tag'].outputs.tag }}
 
       - name: Sync Basilisk artifacts (host)
         run: python tools/sync_all.py
@@ -104,10 +105,11 @@ jobs:
 
       - name: Checkout Basilisk submodule at release tag
         run: |
-          git submodule init external/basilisk
-          cd external/basilisk
-          git fetch origin tag ${{ steps['bsk-tag'].outputs.tag }} --no-tags --depth 1
-          git checkout ${{ steps['bsk-tag'].outputs.tag }}
+          git submodule update --init --depth 1 external/basilisk
+          git -C external/basilisk fetch origin \
+            refs/tags/${{ steps['bsk-tag'].outputs.tag }}:refs/tags/${{ steps['bsk-tag'].outputs.tag }} \
+            --depth 1
+          git -C external/basilisk checkout ${{ steps['bsk-tag'].outputs.tag }}
 
       - name: Sync Basilisk artifacts
         run: python tools/sync_all.py
