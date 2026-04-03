@@ -32,10 +32,10 @@ jobs:
       fail-fast: false
       matrix:
         os:
-          - ubuntu-latest    # manylinux x86_64
+          - ubuntu-latest # manylinux x86_64
           - ubuntu-22.04-arm # manylinux aarch64
-          - macos-latest     # macOS arm64
-          - windows-latest   # Windows x86_64
+          - macos-latest # macOS arm64
+          - windows-latest # Windows x86_64
 
     steps:
       - uses: actions/checkout@v5
@@ -160,3 +160,4 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
+          verbose: true
