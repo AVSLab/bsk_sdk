@@ -27,7 +27,10 @@ bsk-sdk = "bsk_sdk"
 
 [tool.scikit-build]
 wheel.packages = ["bsk_sdk"]
-wheel.py-api = "cp39"
+# SDK content is source/header-only, so this wheel is pure Python and
+# should not carry ABI/platform tags.
+wheel.py-api = "py3"
+wheel.platlib = false
 wheel.install-dir = "bsk_sdk"
 
 sdist.include = [
@@ -55,17 +58,12 @@ version = ">=3.26"
 # cibuildwheel
 # ---------------------------------------------------------------------------
 [tool.cibuildwheel]
-# The wheel uses the stable ABI (cp39-abi3), so one build per platform is
-# sufficient — building multiple Python versions just produces duplicate wheels.
+# Build once; output is a universal py3-none-any wheel.
 build = "cp39-*"
 skip  = ["*-musllinux*", "*-manylinux_i686*", "*-win32"]
 
-# bsk-sdk ships static libraries and headers. Keep macOS/Windows repair disabled,
-# but Linux must still run auditwheel to produce a PyPI-accepted manylinux tag.
+# No repair step needed for pure wheels.
 repair-wheel-command = ""
-
-[tool.cibuildwheel.linux]
-repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 
 # Eigen3 is fetched automatically by CMake (FetchContent) if not found locally —
 # no before-all installation step needed on any platform.
