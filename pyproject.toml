@@ -55,11 +55,12 @@ version = ">=3.26"
 # cibuildwheel
 # ---------------------------------------------------------------------------
 [tool.cibuildwheel]
-# Build CPython 3.9–3.13; skip PyPy and 32-bit Linux.
-build = "cp39-* cp310-* cp311-* cp312-* cp313-*"
+# The wheel uses the stable ABI (cp39-abi3), so one build per platform is
+# sufficient — building multiple Python versions just produces duplicate wheels.
+build = "cp39-*"
 skip  = ["*-musllinux*", "*-manylinux_i686*", "*-win32"]
 
-# bsk-sdk ships only static libraries and headers — no .so/.dylib/.pyd files —
+# bsk-sdk ships only static libraries and headers. No .so/.dylib/.pyd files —
 # so auditwheel/delocate/delvewheel have nothing to repair and will error out.
 repair-wheel-command = ""
 
