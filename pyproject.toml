@@ -60,9 +60,12 @@ version = ">=3.26"
 build = "cp39-*"
 skip  = ["*-musllinux*", "*-manylinux_i686*", "*-win32"]
 
-# bsk-sdk ships only static libraries and headers. No .so/.dylib/.pyd files —
-# so auditwheel/delocate/delvewheel have nothing to repair and will error out.
+# bsk-sdk ships static libraries and headers. Keep macOS/Windows repair disabled,
+# but Linux must still run auditwheel to produce a PyPI-accepted manylinux tag.
 repair-wheel-command = ""
+
+[tool.cibuildwheel.linux]
+repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel}"
 
 # Eigen3 is fetched automatically by CMake (FetchContent) if not found locally —
 # no before-all installation step needed on any platform.
