@@ -47,6 +47,13 @@ sdist.include = [
 ]
 
 sdist.exclude = [
+  ".github/**",
+  "build/**",
+  "dist/**",
+  "docs/**",
+  "examples/**",
+  "external/**",
+  "tests/**",
   "**/__pycache__/**",
   "**/*.pyc",
 ]
