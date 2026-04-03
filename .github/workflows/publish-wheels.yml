@@ -38,11 +38,11 @@ jobs:
           - windows-latest   # Windows x86_64
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
@@ -75,7 +75,7 @@ jobs:
           # the build backend will find them and skip auto-sync.
           BSK_SDK_AUTO_SYNC: "0"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: cibw-wheels-${{ matrix.os }}-${{ strategy.job-index }}
           path: ./wheelhouse/*.whl
@@ -84,11 +84,11 @@ jobs:
     name: Build sdist
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
 
@@ -117,7 +117,7 @@ jobs:
       - name: Build sdist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: cibw-sdist
           path: dist/*.tar.gz
@@ -132,14 +132,14 @@ jobs:
 
     steps:
       - name: Download wheels
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           pattern: cibw-wheels-*
           merge-multiple: true
           path: dist
 
       - name: Download sdist
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: cibw-sdist
           path: dist

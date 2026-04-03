@@ -44,11 +44,11 @@ jobs:
             python_label: "MAX Python"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           submodules: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
 
@@ -86,7 +86,7 @@ jobs:
           pip install build
           python -m build --wheel -o dist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist/*.whl
@@ -107,16 +107,16 @@ jobs:
             python_label: "MAX Python"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           sparse-checkout: tests
           sparse-checkout-cone-mode: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist
@@ -144,17 +144,17 @@ jobs:
             python_label: "MAX Python"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           sparse-checkout: |
             examples
           sparse-checkout-cone-mode: false
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist
@@ -180,7 +180,7 @@ jobs:
           python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
         shell: bash
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v6
         with:
           name: plugin-wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: plugin-dist/*.whl
