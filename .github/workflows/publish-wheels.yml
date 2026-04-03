@@ -26,7 +26,7 @@ on:
 
 jobs:
   build-wheels:
-    name: Build universal wheel
+    name: Build wheel
     runs-on: ubuntu-latest
 
     steps:
@@ -62,16 +62,19 @@ jobs:
       - name: Sync Basilisk artifacts (host)
         run: python tools/sync_all.py
 
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v3.1.4
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build
+
+      - name: Build wheel
         env:
           # Sync artifacts are already present from the host step above;
           # the build backend will find them and skip auto-sync.
           BSK_SDK_AUTO_SYNC: "0"
+        run: python -m build --wheel --outdir wheelhouse
 
       - uses: actions/upload-artifact@v6
         with:
-          name: cibw-wheel
+          name: wheel-dist
           path: ./wheelhouse/*.whl
 
   make-sdist:
@@ -110,12 +113,15 @@ jobs:
       - name: Sync Basilisk artifacts
         run: python tools/sync_all.py
 
+      - name: Install build tooling
+        run: python -m pip install --upgrade pip build
+
       - name: Build sdist
-        run: pipx run build --sdist
+        run: python -m build --sdist --outdir dist
 
       - uses: actions/upload-artifact@v6
         with:
-          name: cibw-sdist
+          name: sdist-dist
           path: dist/*.tar.gz
 
   publish:
@@ -130,14 +136,19 @@ jobs:
       - name: Download wheels
         uses: actions/download-artifact@v5
         with:
-          name: cibw-wheel
+          name: wheel-dist
           path: dist
 
       - name: Download sdist
         uses: actions/download-artifact@v5
         with:
-          name: cibw-sdist
+          name: sdist-dist
           path: dist
+
+      - name: Validate distributions with twine
+        run: |
+          python -m pip install --upgrade pip twine
+          python -m twine check dist/*
 
       - name: Publish to TestPyPI (test tags)
         if: startsWith(github.ref, 'refs/tags/test')

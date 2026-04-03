@@ -54,16 +54,5 @@ sdist.exclude = [
 [tool.scikit-build.cmake]
 version = ">=3.26"
 
-# ---------------------------------------------------------------------------
-# cibuildwheel
-# ---------------------------------------------------------------------------
-[tool.cibuildwheel]
-# Build once; output is a universal py3-none-any wheel.
-build = "cp39-*"
-skip  = ["*-musllinux*", "*-manylinux_i686*", "*-win32"]
-
-# No repair step needed for pure wheels.
-repair-wheel-command = ""
-
 # Eigen3 is fetched automatically by CMake (FetchContent) if not found locally —
 # no before-all installation step needed on any platform.
