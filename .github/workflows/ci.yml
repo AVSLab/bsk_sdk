@@ -46,11 +46,36 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
+          submodules: false
 
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+
+      - name: Determine BSK release tag
+        id: bsk-tag
+        shell: bash
+        run: |
+          BSK_VERSION=$(python -c "
+          from pathlib import Path
+          import re
+
+          text = Path('pyproject.toml').read_text()
+          match = re.search(r'(?m)^version\s*=\s*\"([^\"]+)\"', text)
+          if not match:
+              raise SystemExit('Could not find project.version in pyproject.toml')
+          print(match.group(1))
+          ")
+          echo "version=$BSK_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$BSK_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Checkout Basilisk submodule at release tag
+        shell: bash
+        run: |
+          git submodule init external/basilisk
+          cd external/basilisk
+          git fetch origin tag ${{ steps['bsk-tag'].outputs.tag }} --no-tags --depth 1
+          git checkout ${{ steps['bsk-tag'].outputs.tag }}
 
       - name: Sync artifacts
         run: python tools/sync_all.py
@@ -133,12 +158,14 @@ jobs:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist
 
-      - name: Install bsk-sdk wheel and dependencies
-        # Install bsk first so its transitive deps are resolved, then force-reinstall from the locally
-        # built wheel so the CI always tests the current source.
+      - name: Install bsk-sdk wheel and matching Basilisk
+        # Install the locally built SDK wheel first, then read its embedded
+        # Basilisk sync stamp so CI tests the plugin against the exact matching
+        # bsk release instead of whichever version happens to be latest on PyPI.
         run: |
-          pip install numpy bsk
           pip install dist/*.whl --force-reinstall
+          BSK_VERSION=$(python -c "import bsk_sdk; print(bsk_sdk.bsk_version(), end='')")
+          pip install numpy "bsk==${BSK_VERSION}"
         shell: bash
 
       - name: Build example plugin wheel
