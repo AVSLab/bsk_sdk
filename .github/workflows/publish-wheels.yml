@@ -48,6 +48,7 @@ jobs:
 
       - name: Determine BSK release tag
         id: bsk-tag
+        shell: bash
         run: |
           BSK_TAG=$(python -c "
           import tomllib
@@ -58,6 +59,7 @@ jobs:
           echo "tag=$BSK_TAG" >> $GITHUB_OUTPUT
 
       - name: Checkout Basilisk submodule at release tag
+        shell: bash
         run: |
           git submodule update --init --depth 1 external/basilisk
           git -C external/basilisk fetch origin \
