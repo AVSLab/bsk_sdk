@@ -33,6 +33,11 @@ jobs:
         with:
           submodules: true
 
+      - name: Update Basilisk submodule to develop tip
+        run: |
+          git -C external/basilisk fetch origin develop --depth 1
+          git -C external/basilisk checkout FETCH_HEAD
+
       - name: Install system dependencies
         run: |
           sudo apt-get update
@@ -41,10 +46,6 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
-
-      - name: Install BSK build requirements
-        working-directory: external/basilisk
-        run: pip install -r requirements.txt -r requirements_dev.txt
 
       - uses: mozilla/sccache-action@v0.0.9
 
@@ -61,20 +62,11 @@ jobs:
           key: conan-ubuntu-py3.13-${{ hashFiles('external/basilisk/conan.lock', 'external/basilisk/conanfile.*') }}
           restore-keys: conan-ubuntu-py3.13-
 
-      - name: Configure Conan profile
-        working-directory: external/basilisk
-        run: |
-          python -m conans.conan profile detect --exist-ok
-          prof_path="$(python -m conans.conan profile path default)"
-          grep -q '^\[conf\]' "$prof_path" || printf "\n[conf]\n" >> "$prof_path"
-          grep -q '^tools.system.package_manager:mode=install$' "$prof_path" || \
-            printf "tools.system.package_manager:mode=install\n" >> "$prof_path"
-          grep -q '^tools.system.package_manager:sudo=True$' "$prof_path" || \
-            printf "tools.system.package_manager:sudo=True\n" >> "$prof_path"
 
-      - name: Build and install BSK from develop submodule
-        working-directory: external/basilisk
-        run: pip install --no-build-isolation -e . -v
+      - name: Build and install Basilisk from source
+        uses: ./.github/actions/install-bsk-from-source
+        with:
+          ref: refs/heads/develop
 
       - name: Sync and install SDK
         run: |

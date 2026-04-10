@@ -38,26 +38,45 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Determine BSK release tag
-        id: bsk-tag
+      - name: Resolve Basilisk ref
+        id: bsk-ref
         shell: bash
         run: |
-          BSK_TAG=$(python -c "
-          import tomllib
-          with open('pyproject.toml', 'rb') as f:
-              version = tomllib.load(f)['project']['version']
-          print('v' + version)
-          ")
-          echo "tag=$BSK_TAG" >> $GITHUB_OUTPUT
+          BSK_VERSION=$(tr -d '[:space:]' < src/bsk_sdk/_bsk_version.txt)
+          if [[ -z "$BSK_VERSION" ]]; then
+            echo "_bsk_version.txt is empty" >&2
+            exit 1
+          fi
 
-      - name: Checkout Basilisk submodule at release tag
+          FOUND_REF=""
+          for ref in "refs/tags/${BSK_VERSION}" "refs/tags/v${BSK_VERSION}"; do
+            if git ls-remote --exit-code --refs https://github.com/AVSLab/basilisk.git "$ref" >/dev/null 2>&1; then
+              FOUND_REF="$ref"
+              break
+            fi
+          done
+
+          if [[ -z "$FOUND_REF" ]]; then
+            echo "No matching Basilisk release tag found for ${BSK_VERSION}." >&2
+            echo "Publish workflow only supports released Basilisk versions." >&2
+            echo "Expected one of: refs/tags/${BSK_VERSION} or refs/tags/v${BSK_VERSION}." >&2
+            exit 1
+          fi
+
+          echo "ref=$FOUND_REF" >> "$GITHUB_OUTPUT"
+          echo "resolved=$FOUND_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Basilisk submodule
         shell: bash
         run: |
           git submodule update --init --depth 1 external/basilisk
-          git -C external/basilisk fetch origin \
-            refs/tags/${{ steps['bsk-tag'].outputs.tag }}:refs/tags/${{ steps['bsk-tag'].outputs.tag }} \
-            --depth 1
-          git -C external/basilisk checkout ${{ steps['bsk-tag'].outputs.tag }}
+          git -C external/basilisk fetch origin "${{ steps['bsk-ref'].outputs.ref }}" --depth 1
+          git -C external/basilisk checkout FETCH_HEAD
+
+      - name: Report Basilisk ref
+        shell: bash
+        run: |
+          echo "Using Basilisk ref: ${{ steps['bsk-ref'].outputs.resolved }}"
 
       - name: Sync Basilisk artifacts (host)
         run: python tools/sync_all.py
@@ -89,26 +108,45 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Determine BSK release tag
-        id: bsk-tag
+      - name: Resolve Basilisk ref
+        id: bsk-ref
         shell: bash
         run: |
-          BSK_TAG=$(python -c "
-          import tomllib
-          with open('pyproject.toml', 'rb') as f:
-              version = tomllib.load(f)['project']['version']
-          print('v' + version)
-          ")
-          echo "tag=$BSK_TAG" >> $GITHUB_OUTPUT
+          BSK_VERSION=$(tr -d '[:space:]' < src/bsk_sdk/_bsk_version.txt)
+          if [[ -z "$BSK_VERSION" ]]; then
+            echo "_bsk_version.txt is empty" >&2
+            exit 1
+          fi
 
-      - name: Checkout Basilisk submodule at release tag
+          FOUND_REF=""
+          for ref in "refs/tags/${BSK_VERSION}" "refs/tags/v${BSK_VERSION}"; do
+            if git ls-remote --exit-code --refs https://github.com/AVSLab/basilisk.git "$ref" >/dev/null 2>&1; then
+              FOUND_REF="$ref"
+              break
+            fi
+          done
+
+          if [[ -z "$FOUND_REF" ]]; then
+            echo "No matching Basilisk release tag found for ${BSK_VERSION}." >&2
+            echo "Publish workflow only supports released Basilisk versions." >&2
+            echo "Expected one of: refs/tags/${BSK_VERSION} or refs/tags/v${BSK_VERSION}." >&2
+            exit 1
+          fi
+
+          echo "ref=$FOUND_REF" >> "$GITHUB_OUTPUT"
+          echo "resolved=$FOUND_REF" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Basilisk submodule
         shell: bash
         run: |
           git submodule update --init --depth 1 external/basilisk
-          git -C external/basilisk fetch origin \
-            refs/tags/${{ steps['bsk-tag'].outputs.tag }}:refs/tags/${{ steps['bsk-tag'].outputs.tag }} \
-            --depth 1
-          git -C external/basilisk checkout ${{ steps['bsk-tag'].outputs.tag }}
+          git -C external/basilisk fetch origin "${{ steps['bsk-ref'].outputs.ref }}" --depth 1
+          git -C external/basilisk checkout FETCH_HEAD
+
+      - name: Report Basilisk ref
+        shell: bash
+        run: |
+          echo "Using Basilisk ref: ${{ steps['bsk-ref'].outputs.resolved }}"
 
       - name: Sync Basilisk artifacts
         run: python tools/sync_all.py

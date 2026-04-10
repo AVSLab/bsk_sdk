@@ -52,31 +52,40 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Determine BSK release tag
-        id: bsk-tag
+      - name: Resolve Basilisk ref
+        id: bsk-ref
         shell: bash
         run: |
-          BSK_VERSION=$(python -c "
-          from pathlib import Path
-          import re
+          BSK_VERSION=$(tr -d '[:space:]' < src/bsk_sdk/_bsk_version.txt)
+          if [[ -z "$BSK_VERSION" ]]; then
+            echo "_bsk_version.txt is empty" >&2
+            exit 1
+          fi
 
-          text = Path('pyproject.toml').read_text()
-          match = re.search(r'(?m)^version\s*=\s*\"([^\"]+)\"', text)
-          if not match:
-              raise SystemExit('Could not find project.version in pyproject.toml')
-          print(match.group(1))
-          ")
-          echo "version=$BSK_VERSION" >> $GITHUB_OUTPUT
-          echo "tag=v$BSK_VERSION" >> $GITHUB_OUTPUT
+          for ref in "refs/tags/${BSK_VERSION}" "refs/tags/v${BSK_VERSION}"; do
+            if git ls-remote --exit-code --refs https://github.com/AVSLab/basilisk.git "$ref" >/dev/null 2>&1; then
+              echo "mode=tag" >> "$GITHUB_OUTPUT"
+              echo "ref=$ref" >> "$GITHUB_OUTPUT"
+              echo "resolved=$ref" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
 
-      - name: Checkout Basilisk submodule at release tag
+          echo "mode=develop" >> "$GITHUB_OUTPUT"
+          echo "ref=refs/heads/develop" >> "$GITHUB_OUTPUT"
+          echo "resolved=refs/heads/develop" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Basilisk submodule
         shell: bash
         run: |
           git submodule update --init --depth 1 external/basilisk
-          git -C external/basilisk fetch origin \
-            refs/tags/${{ steps['bsk-tag'].outputs.tag }}:refs/tags/${{ steps['bsk-tag'].outputs.tag }} \
-            --depth 1
-          git -C external/basilisk checkout ${{ steps['bsk-tag'].outputs.tag }}
+          git -C external/basilisk fetch origin "${{ steps['bsk-ref'].outputs.ref }}" --depth 1
+          git -C external/basilisk checkout FETCH_HEAD
+
+      - name: Report Basilisk ref
+        shell: bash
+        run: |
+          echo "Using Basilisk ref: ${{ steps['bsk-ref'].outputs.resolved }}"
 
       - name: Sync artifacts
         run: python tools/sync_all.py
@@ -147,6 +156,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           sparse-checkout: |
+            .github/actions
             examples
           sparse-checkout-cone-mode: false
 
@@ -163,11 +173,26 @@ jobs:
         # Install the locally built SDK wheel first, then read its embedded
         # Basilisk sync stamp so CI tests the plugin against the exact matching
         # bsk release instead of whichever version happens to be latest on PyPI.
+        id: bsk-install
         run: |
+          set -e
           pip install dist/*.whl --force-reinstall
           BSK_VERSION=$(python -c "import bsk_sdk; print(bsk_sdk.bsk_version(), end='')")
-          pip install numpy "bsk==${BSK_VERSION}"
+          echo "bsk_version=${BSK_VERSION}" >> "$GITHUB_OUTPUT"
+          if ! pip install numpy "bsk==${BSK_VERSION}"; then
+            echo "::warning::No released bsk wheel found for ${BSK_VERSION}; building Basilisk from source instead."
+            pip install numpy
+            echo "source_build=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "source_build=false" >> "$GITHUB_OUTPUT"
+          fi
         shell: bash
+
+      - name: Build and install Basilisk from source (fallback)
+        if: steps.bsk-install.outputs.source_build == 'true'
+        uses: ./.github/actions/install-bsk-from-source
+        with:
+          version: ${{ steps.bsk-install.outputs.bsk_version }}
 
       - name: Build example plugin wheel
         # Use --no-isolation so the build inherits the environment where the
