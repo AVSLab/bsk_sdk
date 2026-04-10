@@ -1,0 +1,107 @@
+name: Install Basilisk from source
+description: Resolve a Basilisk ref (optional version->tag resolution with fallback), then build/install Basilisk from source.
+
+inputs:
+  version:
+    description: Basilisk version stamp to resolve to a release tag (tries <version> then v<version>)
+    required: false
+    default: ""
+  ref:
+    description: Explicit git ref/branch/tag to use (overrides version resolution)
+    required: false
+    default: ""
+  fallback-ref:
+    description: Ref to use when version tags are not found
+    required: false
+    default: refs/heads/develop
+  repository:
+    description: Basilisk git repository URL
+    required: false
+    default: https://github.com/AVSLab/basilisk.git
+
+outputs:
+  resolved-ref:
+    description: The resolved Basilisk ref used for checkout
+    value: ${{ steps.resolve.outputs.resolved_ref }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve Basilisk ref
+      id: resolve
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        EXPLICIT_REF="${{ inputs.ref }}"
+        VERSION="${{ inputs.version }}"
+        FALLBACK_REF="${{ inputs.fallback-ref }}"
+        REPO="${{ inputs.repository }}"
+
+        if [[ -n "$EXPLICIT_REF" ]]; then
+          RESOLVED_REF="$EXPLICIT_REF"
+        elif [[ -n "$VERSION" ]]; then
+          RESOLVED_REF=""
+          for ref in "refs/tags/${VERSION}" "refs/tags/v${VERSION}"; do
+            if git ls-remote --exit-code --refs "$REPO" "$ref" >/dev/null 2>&1; then
+              RESOLVED_REF="$ref"
+              break
+            fi
+          done
+
+          if [[ -z "$RESOLVED_REF" ]]; then
+            echo "::warning::No release tag found for ${VERSION}; falling back to ${FALLBACK_REF}."
+            RESOLVED_REF="$FALLBACK_REF"
+          fi
+        else
+          RESOLVED_REF="$FALLBACK_REF"
+        fi
+
+        echo "resolved_ref=$RESOLVED_REF" >> "$GITHUB_OUTPUT"
+        echo "Resolved Basilisk ref: $RESOLVED_REF"
+
+    - name: Clone Basilisk source
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        RESOLVED_REF="${{ steps.resolve.outputs.resolved_ref }}"
+        REPO="${{ inputs.repository }}"
+        CHECKOUT_REF="$RESOLVED_REF"
+
+        if [[ "$CHECKOUT_REF" == refs/tags/* ]]; then
+          CHECKOUT_REF="${CHECKOUT_REF#refs/tags/}"
+        elif [[ "$CHECKOUT_REF" == refs/heads/* ]]; then
+          CHECKOUT_REF="${CHECKOUT_REF#refs/heads/}"
+        fi
+
+        rm -rf "$RUNNER_TEMP/basilisk-src"
+        git clone --depth 1 --branch "$CHECKOUT_REF" "$REPO" "$RUNNER_TEMP/basilisk-src"
+
+    - name: Install Basilisk Python requirements
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "$RUNNER_TEMP/basilisk-src"
+        python -m pip install -r requirements.txt -r requirements_dev.txt
+
+    - name: Configure Conan profile (Linux)
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "$RUNNER_TEMP/basilisk-src"
+        python -m conans.conan profile detect --exist-ok
+        prof_path="$(python -m conans.conan profile path default)"
+        grep -q '^\[conf\]' "$prof_path" || printf "\n[conf]\n" >> "$prof_path"
+        grep -q '^tools.system.package_manager:mode=install$' "$prof_path" || \
+          printf "tools.system.package_manager:mode=install\n" >> "$prof_path"
+        grep -q '^tools.system.package_manager:sudo=True$' "$prof_path" || \
+          printf "tools.system.package_manager:sudo=True\n" >> "$prof_path"
+
+    - name: Build and install Basilisk from source
+      shell: bash
+      run: |
+        set -euo pipefail
+        cd "$RUNNER_TEMP/basilisk-src"
+        python -m pip install --no-build-isolation -e . -v

@@ -83,9 +83,10 @@ function(bsk_generate_messages)
   _bsk_resolve_msg_autosource_dir(_msg_autosrc)
 
   set(_gen_swig "${_msg_autosrc}/generateSWIGModules.py")
+  set(_gen_meta "${_msg_autosrc}/generatePayloadMetaJson.py")
   set(_auto_root "${CMAKE_CURRENT_BINARY_DIR}/autoSource")
-  set(_xml_dir "${_auto_root}/xmlWrap")
-  file(MAKE_DIRECTORY "${_xml_dir}")
+  set(_json_dir "${_auto_root}/cMsgMeta")
+  file(MAKE_DIRECTORY "${_json_dir}")
 
   set(_generated_targets "")
   set(_gen_c "False")
@@ -98,17 +99,34 @@ function(bsk_generate_messages)
     get_filename_component(_payload_name "${_hdr_abs}" NAME_WE)
     get_filename_component(_hdr_dir "${_hdr_abs}" DIRECTORY)
 
-    # Generate SWIG XML from the header
-    set(_xml_out "${_xml_dir}/${_payload_name}.xml")
+    # Detect C vs C++ based on GENERATE_C_INTERFACE flag
+    if(BSK_GENERATE_C_INTERFACE)
+      set(_clang_lang "c")
+    else()
+      set(_clang_lang "c++")
+    endif()
+
+    # Generate struct metadata JSON from the header using libclang
+    set(_meta_out "${_json_dir}/${_payload_name}.json")
+    set(_depfile "${_json_dir}/${_payload_name}.d")
     add_custom_command(
-      OUTPUT "${_xml_out}"
-      COMMAND ${SWIG_EXECUTABLE} -c++ -xml -module dummy ${_swig_flags} -o "${_xml_out}" "${_hdr_abs}"
-      DEPENDS "${_hdr_abs}"
-      COMMENT "Generating SWIG XML for ${_payload_name}"
+      OUTPUT "${_meta_out}"
+      COMMAND ${Python3_EXECUTABLE}
+              "${_gen_meta}"
+              "${_hdr_abs}"
+              "${_payload_name}"
+              "${_meta_out}"
+              --depfile "${_depfile}"
+              --
+              -x ${_clang_lang}
+              ${_swig_flags}
+      DEPENDS "${_hdr_abs}" "${_gen_meta}"
+      DEPFILE "${_depfile}"
+      COMMENT "Generating metadata JSON for ${_payload_name}"
       VERBATIM
     )
 
-    # Generate the .i interface file from the XML
+    # Generate the .i interface file from the JSON
     set(_i_out "${_auto_root}/${_payload_name}.i")
     add_custom_command(
       OUTPUT "${_i_out}"
@@ -116,8 +134,8 @@ function(bsk_generate_messages)
               "${_gen_swig}"
               "${_i_out}" "${_hdr_abs}" "${_payload_name}" "${_hdr_dir}"
               "${_gen_c}"
-              "${_xml_out}" 0
-      DEPENDS "${_hdr_abs}" "${_xml_out}"
+              "${_meta_out}" 0
+      DEPENDS "${_hdr_abs}" "${_meta_out}" "${_gen_swig}" "${_msg_autosrc}/msgInterfacePy.i.in"
       WORKING_DIRECTORY "${_msg_autosrc}"
       COMMENT "Generating SWIG interface for ${_payload_name}"
       VERBATIM
