@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "bsk-sdk"
-version = "2.10.2"
+version = "2.11.0beta"
 description = "Vendored Basilisk SDK headers, runtime, and CMake integration for plugin authors"
 readme = "README.md"
 license = { text = "ISC" }
@@ -19,6 +19,9 @@ dependencies = [
   # from 2.10.1 onward. Both bsk and bsk-sdk require >=4.4.1 to stay on epoch 5.
   # The cmake check in bsk_add_swig_module enforces the match at build time.
   "swig==4.4.1",
+  # Required by generatePayloadMetaJson.py, which parses *Payload.h structs at
+  # plugin build time to produce the JSON metadata consumed by generateSWIGModules.py.
+  "libclang>=15.0.6.1,<=18.1.1",
 ]
 
 [project.entry-points."cmake.prefix"]
