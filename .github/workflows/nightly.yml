@@ -1,0 +1,98 @@
+#
+#  ISC License
+#
+#  Copyright (c) 2026, Autonomous Vehicle Systems Lab, University of Colorado at Boulder
+#
+#  Permission to use, copy, modify, and/or distribute this software for any
+#  purpose with or without fee is hereby granted, provided that the above
+#  copyright notice and this permission notice appear in all copies.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+#  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+#  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+#  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+#  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+#  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+name: Nightly
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 06:00 UTC daily
+  workflow_dispatch:
+
+jobs:
+  nightly:
+    name: SDK vs BSK develop
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: true
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential python3-setuptools python3-tk libgtk2.0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install BSK build requirements
+        working-directory: external/basilisk
+        run: pip install -r requirements.txt -r requirements_dev.txt
+
+      - uses: mozilla/sccache-action@v0.0.9
+
+      - name: Set sccache as compiler launcher
+        run: |
+          echo "SCCACHE_GHA_ENABLED=true" >> $GITHUB_ENV
+          echo "CMAKE_C_COMPILER_LAUNCHER=sccache" >> $GITHUB_ENV
+          echo "CMAKE_CXX_COMPILER_LAUNCHER=sccache" >> $GITHUB_ENV
+
+      - name: Cache Conan packages
+        uses: actions/cache@v5
+        with:
+          path: ~/.conan2
+          key: conan-ubuntu-py3.13-${{ hashFiles('external/basilisk/conan.lock', 'external/basilisk/conanfile.*') }}
+          restore-keys: conan-ubuntu-py3.13-
+
+      - name: Configure Conan profile
+        working-directory: external/basilisk
+        run: |
+          python -m conans.conan profile detect --exist-ok
+          prof_path="$(python -m conans.conan profile path default)"
+          grep -q '^\[conf\]' "$prof_path" || printf "\n[conf]\n" >> "$prof_path"
+          grep -q '^tools.system.package_manager:mode=install$' "$prof_path" || \
+            printf "tools.system.package_manager:mode=install\n" >> "$prof_path"
+          grep -q '^tools.system.package_manager:sudo=True$' "$prof_path" || \
+            printf "tools.system.package_manager:sudo=True\n" >> "$prof_path"
+
+      - name: Build and install BSK from develop submodule
+        working-directory: external/basilisk
+        run: pip install --no-build-isolation -e . -v
+
+      - name: Sync and install SDK
+        run: |
+          python tools/sync_all.py
+          pip install build
+          python -m build --wheel -o dist
+          pip install dist/*.whl
+
+      - name: Smoke-test SDK
+        run: pytest tests/test_smoke.py -v
+
+      - name: Build and test example plugin
+        run: |
+          pip install scikit-build-core pytest
+          python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
+          pip install plugin-dist/*.whl
+          pytest examples/custom-atm-plugin/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "::warning::Nightly build failed. BSK develop may have introduced a breaking change for bsk-sdk."
