@@ -71,6 +71,8 @@ IGNORE_PATTERNS = [
     "_UnitTest",
     "_Documentation",
     "__pycache__",
+    # Depends on cfitsio/fitsio.h. Keep the SDK self-contained.
+    "haslamBackgroundRadiation.h",
     "*.swg",
     "*.i",
     "*.py",
