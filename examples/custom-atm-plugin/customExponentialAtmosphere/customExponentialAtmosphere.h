@@ -34,6 +34,19 @@ public:
     // Plugin-defined input message wiring (idiomatic Basilisk pattern)
     void connectAtmStatus(Message<CustomAtmStatusMsgPayload>* msg);
 
+    /*! @brief Compute the orbital radius for a circular orbit using Basilisk's orbitalMotion utility.
+     *
+     * This helper exists to exercise a Basilisk architecture utility from the
+     * plugin example. It proves that plugin modules can include
+     * architecture/utilities/orbitalMotion.h and link against the corresponding
+     * SDK-provided utility implementation.
+     *
+     * @param mu [m^3/s^2] Gravitational parameter used by elem2rv()
+     * @param semiMajorAxis [m] Circular orbit semi-major axis
+     * @return [m] Euclidean norm of the position vector returned by elem2rv()
+     */
+    double radiusFromCircularElements(double mu, double semiMajorAxis);
+
 private:
     void evaluateAtmosphereModel(AtmoPropsMsgPayload* msg, double currentTime) override;
 
