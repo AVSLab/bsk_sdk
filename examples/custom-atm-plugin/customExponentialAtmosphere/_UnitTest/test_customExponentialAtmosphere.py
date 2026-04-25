@@ -77,6 +77,17 @@ def test_plugin_instantiates():
     assert atm is not None
 
 
+def test_plugin_links_architecture_utilities():
+    """Verify the sample plugin can call a compiled Basilisk architecture utility."""
+    atm = customExponentialAtmosphere.CustomExponentialAtmosphere()
+    earth_mu = 3.986004418e14  # [m^3/s^2]
+    semi_major_axis = 7_000_000.0  # [m]
+
+    radius = atm.radiusFromCircularElements(earth_mu, semi_major_axis)
+
+    assert radius == pytest.approx(semi_major_axis, rel=1e-12, abs=0.0)
+
+
 def test_density_at_400km(sim_env):
     sim, atmosphere, log, dt = sim_env
     sim.ConfigureStopTime(dt)

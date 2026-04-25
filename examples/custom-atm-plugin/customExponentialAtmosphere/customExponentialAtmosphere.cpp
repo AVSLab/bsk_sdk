@@ -20,6 +20,10 @@
 
 #include "customExponentialAtmosphere.h"
 
+#include "architecture/utilities/orbitalMotion.h"
+
+#include <cmath>
+
 /*! The constructor method initializes the dipole parameters to zero, resuling in a zero magnetic field result by default.
 
  */
@@ -85,4 +89,30 @@ void CustomExponentialAtmosphere::evaluateAtmosphereModel(AtmoPropsMsgPayload* m
 void CustomExponentialAtmosphere::connectAtmStatus(Message<CustomAtmStatusMsgPayload>* msg)
 {
     this->atmStatusInMsg_.subscribeTo(msg);
+}
+
+/*! Compute a circular-orbit radius using Basilisk's orbitalMotion utility.
+ @param mu gravitational parameter passed to elem2rv() in m^3/s^2
+ @param semiMajorAxis circular orbit semi-major axis in meters
+ @return position-vector magnitude returned by elem2rv() in meters
+ */
+double CustomExponentialAtmosphere::radiusFromCircularElements(double mu, double semiMajorAxis)
+{
+    //! - Define a simple circular orbit in the inertial reference plane.
+    ClassicElements elements = {};  //!< -- Classic orbit elements consumed by elem2rv()
+    elements.a = semiMajorAxis;     // [m] Semi-major axis
+    elements.e = 0.0;               // -- Circular orbit eccentricity
+    elements.i = 0.0;               // [rad] Orbit inclination
+    elements.Omega = 0.0;           // [rad] Right ascension of ascending node
+    elements.omega = 0.0;           // [rad] Argument of periapsis
+    elements.f = 0.0;               // [rad] True anomaly
+
+    //! - Convert the orbital elements to position and velocity with orbitalMotion.
+    double rVec[3] = {};            //!< [m] Inertial position vector
+    double vVec[3] = {};            //!< [m/s] Inertial velocity vector
+
+    elem2rv(mu, &elements, rVec, vVec);
+
+    //! - Return the position magnitude so the Python test can verify the call.
+    return std::sqrt(rVec[0] * rVec[0] + rVec[1] * rVec[1] + rVec[2] * rVec[2]);
 }
