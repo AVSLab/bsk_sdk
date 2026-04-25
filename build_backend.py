@@ -48,6 +48,7 @@ def _required_sync_paths(repo_root: Path) -> list[Path]:
     return [
         sdk_src / "include" / "Basilisk",
         sdk_src / "arch_min",
+        sdk_src / "arch_utilities",
         sdk_src / "runtime_min",
         sdk_src / "swig",
     ]

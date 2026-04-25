@@ -9,6 +9,7 @@ include(GNUInstallDirs)
 # Python wheel layout
 set(BSK_SDK_INCLUDE_SRC_DIR       "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/include")
 set(BSK_ARCH_MIN_SRC_DIR          "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/arch_min")
+set(BSK_ARCH_UTILITIES_SRC_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/arch_utilities")
 set(BSK_RUNTIME_MIN_SRC_DIR       "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/runtime_min")
 set(BSK_SDK_COMPAT_INCLUDE_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/include_compat")
 set(BSK_SDK_SWIG_SRC_DIR          "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/swig")
@@ -84,6 +85,30 @@ target_include_directories(bsk_runtime_min PUBLIC
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/compat>
 )
 
+# Basilisk architecture utility support library
+file(GLOB BSK_ARCH_UTILITIES_SOURCES
+  CONFIGURE_DEPENDS
+  "${BSK_ARCH_UTILITIES_SRC_DIR}/*.c"
+  "${BSK_ARCH_UTILITIES_SRC_DIR}/*.cpp"
+)
+
+add_library(bsk_arch_utilities STATIC ${BSK_ARCH_UTILITIES_SOURCES})
+add_library(bsk::arch_utilities ALIAS bsk_arch_utilities)
+
+target_compile_features(bsk_arch_utilities PUBLIC cxx_std_17)
+target_link_libraries(bsk_arch_utilities PUBLIC bsk::sdk_headers Eigen3::Eigen)
+
+set_target_properties(bsk_arch_utilities PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+target_include_directories(bsk_arch_utilities PUBLIC
+  $<BUILD_INTERFACE:${BSK_SDK_INCLUDE_SRC_DIR}/Basilisk>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Basilisk>
+)
+
+target_include_directories(bsk_arch_utilities PRIVATE
+  ${BSK_SDK_INCLUDE_SRC_DIR}/Basilisk/architecture/utilities
+)
+
 # Minimal Basilisk "arch" subset
 file(GLOB BSK_ARCH_MIN_SOURCES
   CONFIGURE_DEPENDS
@@ -95,7 +120,7 @@ add_library(bsk_arch_min STATIC ${BSK_ARCH_MIN_SOURCES})
 add_library(bsk::arch_min ALIAS bsk_arch_min)
 
 target_compile_features(bsk_arch_min PUBLIC cxx_std_17)
-target_link_libraries(bsk_arch_min PUBLIC bsk::sdk_headers)
+target_link_libraries(bsk_arch_min PUBLIC bsk::sdk_headers bsk::arch_utilities)
 
 set_target_properties(bsk_arch_min PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
@@ -116,6 +141,7 @@ add_library(bsk::bsk_plugin ALIAS bsk_plugin)
 target_link_libraries(bsk_plugin INTERFACE
   bsk::sdk_headers
   bsk::arch_min
+  bsk::arch_utilities
   bsk::runtime_min
 )
 
@@ -127,6 +153,14 @@ install(
 install(
   DIRECTORY "${BSK_SDK_COMPAT_INCLUDE_DIR}/"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/compat"
+)
+
+install(
+  DIRECTORY "${BSK_ARCH_UTILITIES_SRC_DIR}/"
+  DESTINATION "arch_utilities"
+  FILES_MATCHING
+    PATTERN "*.c"
+    PATTERN "*.cpp"
 )
 
 install(
@@ -151,7 +185,7 @@ install(
 )
 
 install(
-  TARGETS bsk_arch_min bsk_runtime_min bsk_sdk_headers bsk_plugin
+  TARGETS bsk_arch_min bsk_arch_utilities bsk_runtime_min bsk_sdk_headers bsk_plugin
   EXPORT bsk-sdkTargets
   ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
 )
