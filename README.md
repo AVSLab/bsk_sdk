@@ -26,6 +26,21 @@ bsk_add_swig_module(
 See [`examples/custom-atm-plugin/`](examples/custom-atm-plugin/) for a
 complete working example.
 
+## Basilisk utility libraries
+
+Plugins that link against `bsk::plugin` can include Basilisk utility headers
+with their normal Basilisk-relative paths, for example:
+
+```cpp
+#include "architecture/utilities/orbitalMotion.h"
+```
+
+The SDK builds the self-contained C/C++ sources from
+`architecture/utilities` into `bsk::arch_utilities`, so calls such as
+`elem2rv()` and `rv2elem()` are available to plugin modules. Utilities that
+depend on external libraries not shipped by the SDK are excluded; currently
+this excludes the cfitsio-backed Haslam background radiation utility.
+
 ## Syncing from Basilisk
 
 The SDK vendors a curated subset of Basilisk headers and sources. These are

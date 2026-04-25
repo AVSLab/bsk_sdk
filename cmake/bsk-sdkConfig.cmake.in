@@ -8,6 +8,7 @@ get_filename_component(_bsk_sdk_pkg_dir    "${_bsk_sdk_lib_dir}" PATH)      # <p
 set(BSK_SDK_PKG_DIR            "${_bsk_sdk_pkg_dir}"                CACHE PATH "bsk-sdk package root")
 set(BSK_SDK_INCLUDE_DIR        "${BSK_SDK_PKG_DIR}/include"         CACHE PATH "bsk-sdk include root")
 set(BSK_SDK_COMPAT_INCLUDE_DIR "${BSK_SDK_INCLUDE_DIR}/compat"      CACHE PATH "bsk-sdk compat include dir")
+set(BSK_SDK_ARCH_UTILITIES_DIR "${BSK_SDK_PKG_DIR}/arch_utilities"  CACHE PATH "bsk-sdk arch_utilities dir (if shipped)")
 set(BSK_SDK_RUNTIME_MIN_DIR    "${BSK_SDK_PKG_DIR}/runtime_min"     CACHE PATH "bsk-sdk runtime_min dir (if shipped)")
 set(BSK_SDK_SWIG_DIR           "${BSK_SDK_PKG_DIR}/swig"            CACHE PATH "bsk-sdk swig dir")
 set(BSK_SDK_TOOLS_DIR          "${BSK_SDK_PKG_DIR}/tools"           CACHE PATH "bsk-sdk tools dir")
@@ -30,6 +31,7 @@ endfunction()
 
 _bsk_sdk_make_alias_if_needed(bsk::sdk_headers  bsk::bsk_sdk_headers)
 _bsk_sdk_make_alias_if_needed(bsk::arch_min     bsk::bsk_arch_min)
+_bsk_sdk_make_alias_if_needed(bsk::arch_utilities bsk::bsk_arch_utilities)
 _bsk_sdk_make_alias_if_needed(bsk::runtime_min  bsk::bsk_runtime_min)
 _bsk_sdk_make_alias_if_needed(bsk::plugin       bsk::bsk_plugin)
 
