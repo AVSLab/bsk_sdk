@@ -97,6 +97,9 @@ add_library(bsk::arch_utilities ALIAS bsk_arch_utilities)
 
 target_compile_features(bsk_arch_utilities PUBLIC cxx_std_17)
 target_link_libraries(bsk_arch_utilities PUBLIC bsk::sdk_headers Eigen3::Eigen)
+if(MSVC)
+  target_compile_definitions(bsk_arch_utilities PRIVATE _USE_MATH_DEFINES)
+endif()
 
 set_target_properties(bsk_arch_utilities PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
