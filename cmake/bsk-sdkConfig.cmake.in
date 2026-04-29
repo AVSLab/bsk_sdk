@@ -55,15 +55,26 @@ function(_bsk_sdk_check_basilisk_version)
   endif()
 
   if(NOT _bsk_installed_version VERSION_EQUAL BSK_SDK_BSK_VERSION)
-    message(FATAL_ERROR
-      "Basilisk version mismatch!\n"
-      "  bsk-sdk was synced from Basilisk ${BSK_SDK_BSK_VERSION}\n"
-      "  Installed Basilisk is ${_bsk_installed_version}\n\n"
-      "Plugins compiled against mismatched headers will have ABI incompatibilities.\n"
-      "Either install the matching Basilisk version or re-sync the SDK:\n"
-      "  pip install basilisk==${BSK_SDK_BSK_VERSION}\n"
-      "  # or: cd external/basilisk && git checkout v${_bsk_installed_version} && cd ../.. && python3 tools/sync_all.py"
-    )
+    # Pre-release versions contain letters. Warn only so
+    # nightly and develop builds can be used in CI and testing.
+    # Stable version mismatches are a hard error: bsk and bsk-sdk must match.
+    string(REGEX MATCH "[a-zA-Z]" _bsk_is_prerelease "${_bsk_installed_version}")
+    if(_bsk_is_prerelease)
+      message(WARNING
+        "Basilisk pre-release version — ABI compatibility is not guaranteed.\n"
+        "  bsk-sdk synced from: Basilisk ${BSK_SDK_BSK_VERSION}\n"
+        "  Installed:           ${_bsk_installed_version} (pre-release)\n"
+      )
+    else()
+      message(FATAL_ERROR
+        "Basilisk version mismatch!\n"
+        "  bsk-sdk synced from: Basilisk ${BSK_SDK_BSK_VERSION}\n"
+        "  Installed:           ${_bsk_installed_version}\n\n"
+        "bsk and bsk-sdk versions must match. Install the correct pair:\n"
+        "  pip install bsk==${BSK_SDK_BSK_VERSION} bsk-sdk==${BSK_SDK_BSK_VERSION}\n"
+        "  # or re-sync: cd external/basilisk && git checkout v${_bsk_installed_version} && cd ../.. && python3 tools/sync_all.py"
+      )
+    endif()
   endif()
 endfunction()
 
