@@ -1,0 +1,76 @@
+#
+#  ISC License
+#
+#  Copyright (c) 2026, Autonomous Vehicle Systems Lab, University of Colorado at Boulder
+#
+#  Permission to use, copy, modify, and/or distribute this software for any
+#  purpose with or without fee is hereby granted, provided that the above
+#  copyright notice and this permission notice appear in all copies.
+#
+#  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+#  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+#  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+#  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+#  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+#  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+#  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+#
+
+name: Build bsk-sdk distributions
+description: >
+  Checks out the matching Basilisk submodule, syncs vendored artifacts,
+  and builds the bsk-sdk wheel.
+
+inputs:
+  sdist:
+    description: Build an sdist alongside the wheel
+    default: "false"
+  output-dir:
+    description: Directory to write built distributions into
+    default: dist
+
+runs:
+  using: composite
+  steps:
+    - name: Determine BSK release tag
+      id: bsk-tag
+      shell: bash
+      run: |
+        BSK_TAG=$(python -c "
+        import re
+        from pathlib import Path
+        text = Path('pyproject.toml').read_text()
+        match = re.search(r'(?m)^version\s*=\s*\"([^\"]+)\"', text)
+        if not match:
+            raise SystemExit('version not found in pyproject.toml')
+        print('v' + match.group(1))
+        ")
+        echo "tag=$BSK_TAG" >> $GITHUB_OUTPUT
+
+    - name: Checkout Basilisk submodule at release tag
+      shell: bash
+      run: |
+        git submodule update --init --depth 1 external/basilisk
+        git -C external/basilisk fetch origin \
+          refs/tags/${{ steps.bsk-tag.outputs.tag }}:refs/tags/${{ steps.bsk-tag.outputs.tag }} \
+          --depth 1
+        git -C external/basilisk checkout ${{ steps.bsk-tag.outputs.tag }}
+
+    - name: Sync Basilisk artifacts
+      shell: bash
+      run: python tools/sync_all.py
+
+    - name: Install build tooling
+      shell: bash
+      run: python -m pip install --upgrade pip build
+
+    - name: Build distributions
+      shell: bash
+      env:
+        BSK_SDK_AUTO_SYNC: "0"
+      run: |
+        if [ "${{ inputs.sdist }}" = "true" ]; then
+          python -m build --outdir "${{ inputs.output-dir }}"
+        else
+          python -m build --wheel --outdir "${{ inputs.output-dir }}"
+        fi
