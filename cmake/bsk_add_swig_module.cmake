@@ -273,10 +273,8 @@ function(bsk_add_swig_module)
 
   _bsk_find_build_deps()
 
-  set(_bsk_sdk_sources "")
-  if(NOT BSK_LINK_LIBS)
-    _bsk_resolve_sdk_sources(_bsk_sdk_sources BSK_LINK_LIBS)
-  endif()
+  _bsk_resolve_sdk_sources(_bsk_sdk_sources _bsk_sdk_link_libs)
+  set(BSK_LINK_LIBS ${_bsk_sdk_link_libs} ${BSK_LINK_LIBS})
 
   _bsk_collect_swig_flags(_swig_flags)
 
