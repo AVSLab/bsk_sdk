@@ -92,14 +92,23 @@ macro(_bsk_find_build_deps)
   find_package(Eigen3 CONFIG REQUIRED)
 endmacro()
 
-# Resolve link libraries: prefer the SDK's bsk::arch_min target, fall back to
-# the installed Basilisk runtime libs.
-function(_bsk_resolve_link_libs out_var)
-  if(TARGET bsk::arch_min)
-    set(${out_var} "bsk::arch_min" PARENT_SCOPE)
+# Collect SDK implementation sources to compile directly into the plugin.
+# Falls back to the installed Basilisk runtime libs when sources are absent.
+function(_bsk_resolve_sdk_sources out_sources out_link_libs)
+  if(DEFINED BSK_SDK_ARCH_MIN_DIR       AND EXISTS "${BSK_SDK_ARCH_MIN_DIR}"
+     AND DEFINED BSK_SDK_ARCH_UTILITIES_DIR AND EXISTS "${BSK_SDK_ARCH_UTILITIES_DIR}"
+     AND DEFINED BSK_SDK_RUNTIME_MIN_DIR    AND EXISTS "${BSK_SDK_RUNTIME_MIN_DIR}")
+    file(GLOB _srcs
+      "${BSK_SDK_ARCH_MIN_DIR}/*.c"        "${BSK_SDK_ARCH_MIN_DIR}/*.cpp"
+      "${BSK_SDK_ARCH_UTILITIES_DIR}/*.c"  "${BSK_SDK_ARCH_UTILITIES_DIR}/*.cpp"
+      "${BSK_SDK_RUNTIME_MIN_DIR}/*.c"     "${BSK_SDK_RUNTIME_MIN_DIR}/*.cpp"
+    )
+    set(${out_sources}   "${_srcs}"          PARENT_SCOPE)
+    set(${out_link_libs} "bsk::sdk_headers"  PARENT_SCOPE)
   else()
+    set(${out_sources} "" PARENT_SCOPE)
     _bsk_resolve_basilisk_libs(_libs)
-    set(${out_var} "${_libs}" PARENT_SCOPE)
+    set(${out_link_libs} "${_libs}" PARENT_SCOPE)
   endif()
 endfunction()
 
@@ -242,9 +251,9 @@ except ImportError:\n\
       "(capsule: swig_runtime_data${_plugin_rt})\n\n"
       "Plugins compiled with this SWIG version cannot exchange objects with "
       "Basilisk across module boundaries.\n"
-      "Install a SWIG version that matches bsk's runtime epoch.\n"
-      "  bsk-sdk declares: swig>=4.2.1,<=4.3.1  (runtime version 4, matching bsk)\n"
-      "  Reinstall with:  pip install \"swig>=4.2.1,<=4.3.1\""
+      "Install a SWIG version whose runtime epoch matches bsk (epoch ${_bsk_rt}):\n"
+      "  SWIG runtime epoch 5 -> SWIG 4.4.1+  (pip install \"swig>=4.4.1\")\n"
+      "  SWIG runtime epoch 4 -> SWIG 4.2.x or 4.3.x  (pip install \"swig>=4.2.1,<4.4.0\")"
     )
   endif()
 endfunction()
@@ -264,8 +273,9 @@ function(bsk_add_swig_module)
 
   _bsk_find_build_deps()
 
+  set(_bsk_sdk_sources "")
   if(NOT BSK_LINK_LIBS)
-    _bsk_resolve_link_libs(BSK_LINK_LIBS)
+    _bsk_resolve_sdk_sources(_bsk_sdk_sources BSK_LINK_LIBS)
   endif()
 
   _bsk_collect_swig_flags(_swig_flags)
@@ -289,6 +299,17 @@ function(bsk_add_swig_module)
   _bsk_configure_swig_target(
     ${BSK_TARGET} "${BSK_OUTPUT_DIR}" "${BSK_LINK_LIBS}" "${BSK_INCLUDE_DIRS}"
   )
+
+  if(_bsk_sdk_sources)
+    target_sources(${BSK_TARGET} PRIVATE ${_bsk_sdk_sources})
+    target_include_directories(${BSK_TARGET} PRIVATE
+      "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities"
+      "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities/moduleIdGenerator"
+    )
+    if(MSVC)
+      target_compile_definitions(${BSK_TARGET} PRIVATE _USE_MATH_DEFINES)
+    endif()
+  endif()
 
   if(BSK_DEPENDS)
     add_dependencies(${BSK_TARGET} ${BSK_DEPENDS})

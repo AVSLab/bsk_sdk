@@ -15,11 +15,10 @@ dependencies = [
   # provides a self-contained binary on all platforms and is detected
   # automatically by bsk_add_swig_module.cmake via the Python interpreter.
   #
-  # SWIG 4.4.0 bumped SWIG_RUNTIME_VERSION from "4" to "5", changing the
-  # capsule name from swig_runtime_data4 to swig_runtime_data5. bsk is built
-  # with SWIG 4.3.1 (runtime version 4), so plugins must also use a <4.4
-  # SWIG to share the same type table and make cross-module type casts work.
-  "swig>=4.2.1,<=4.3.1",
+  # SWIG 4.4.1+ uses SWIG_RUNTIME_VERSION "5" (epoch 5), which bsk also uses
+  # from 2.10.1 onward. Both bsk and bsk-sdk require >=4.4.1 to stay on epoch 5.
+  # The cmake check in bsk_add_swig_module enforces the match at build time.
+  "swig>=4.4.1",
 ]
 
 [project.entry-points."cmake.prefix"]
