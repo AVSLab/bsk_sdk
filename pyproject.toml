@@ -26,8 +26,8 @@ bsk-sdk = "bsk_sdk"
 
 [tool.scikit-build]
 wheel.packages = ["bsk_sdk"]
-# SDK content is source/header-only, so this wheel is pure Python and
-# should not carry ABI/platform tags.
+# SDK sources and headers are compiled into each plugin at plugin build time,
+# so this wheel carries no native artifacts and is genuinely platform-neutral.
 wheel.py-api = "py3"
 wheel.platlib = false
 wheel.install-dir = "bsk_sdk"

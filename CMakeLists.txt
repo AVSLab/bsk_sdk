@@ -63,90 +63,6 @@ target_include_directories(bsk_sdk_headers INTERFACE
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Basilisk>
 )
 
-# Minimal runtime subset which is a build ALL curated .c/.cpp
-file(GLOB BSK_RUNTIME_MIN_SOURCES
-  CONFIGURE_DEPENDS
-  "${BSK_RUNTIME_MIN_SRC_DIR}/*.c"
-  "${BSK_RUNTIME_MIN_SRC_DIR}/*.cpp"
-)
-
-add_library(bsk_runtime_min STATIC ${BSK_RUNTIME_MIN_SOURCES})
-add_library(bsk::runtime_min ALIAS bsk_runtime_min)
-
-target_compile_features(bsk_runtime_min PUBLIC cxx_std_17)
-target_link_libraries(bsk_runtime_min PUBLIC bsk::sdk_headers Eigen3::Eigen)
-
-set_target_properties(bsk_runtime_min PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-target_include_directories(bsk_runtime_min PUBLIC
-  $<BUILD_INTERFACE:${BSK_SDK_INCLUDE_SRC_DIR}/Basilisk>
-  $<BUILD_INTERFACE:${BSK_SDK_COMPAT_INCLUDE_DIR}>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Basilisk>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/compat>
-)
-
-# Basilisk architecture utility support library
-file(GLOB BSK_ARCH_UTILITIES_SOURCES
-  CONFIGURE_DEPENDS
-  "${BSK_ARCH_UTILITIES_SRC_DIR}/*.c"
-  "${BSK_ARCH_UTILITIES_SRC_DIR}/*.cpp"
-)
-
-add_library(bsk_arch_utilities STATIC ${BSK_ARCH_UTILITIES_SOURCES})
-add_library(bsk::arch_utilities ALIAS bsk_arch_utilities)
-
-target_compile_features(bsk_arch_utilities PUBLIC cxx_std_17)
-target_link_libraries(bsk_arch_utilities PUBLIC bsk::sdk_headers Eigen3::Eigen)
-if(MSVC)
-  target_compile_definitions(bsk_arch_utilities PRIVATE _USE_MATH_DEFINES)
-endif()
-
-set_target_properties(bsk_arch_utilities PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-target_include_directories(bsk_arch_utilities PUBLIC
-  $<BUILD_INTERFACE:${BSK_SDK_INCLUDE_SRC_DIR}/Basilisk>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Basilisk>
-)
-
-target_include_directories(bsk_arch_utilities PRIVATE
-  ${BSK_SDK_INCLUDE_SRC_DIR}/Basilisk/architecture/utilities
-)
-
-# Minimal Basilisk "arch" subset
-file(GLOB BSK_ARCH_MIN_SOURCES
-  CONFIGURE_DEPENDS
-  "${BSK_ARCH_MIN_SRC_DIR}/*.c"
-  "${BSK_ARCH_MIN_SRC_DIR}/*.cpp"
-)
-
-add_library(bsk_arch_min STATIC ${BSK_ARCH_MIN_SOURCES})
-add_library(bsk::arch_min ALIAS bsk_arch_min)
-
-target_compile_features(bsk_arch_min PUBLIC cxx_std_17)
-target_link_libraries(bsk_arch_min PUBLIC bsk::sdk_headers bsk::arch_utilities)
-
-set_target_properties(bsk_arch_min PROPERTIES POSITION_INDEPENDENT_CODE ON)
-
-target_include_directories(bsk_arch_min PUBLIC
-  $<BUILD_INTERFACE:${BSK_SDK_INCLUDE_SRC_DIR}/Basilisk>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Basilisk>
-)
-
-target_include_directories(bsk_arch_min PRIVATE
-  ${BSK_SDK_INCLUDE_SRC_DIR}/Basilisk/architecture/utilities
-  ${BSK_SDK_INCLUDE_SRC_DIR}/Basilisk/architecture/utilities/moduleIdGenerator
-)
-
-
-add_library(bsk_plugin INTERFACE)
-add_library(bsk::bsk_plugin ALIAS bsk_plugin)
-
-target_link_libraries(bsk_plugin INTERFACE
-  bsk::sdk_headers
-  bsk::arch_min
-  bsk::arch_utilities
-  bsk::runtime_min
-)
 
 install(
   DIRECTORY "${BSK_SDK_INCLUDE_SRC_DIR}/"
@@ -156,6 +72,14 @@ install(
 install(
   DIRECTORY "${BSK_SDK_COMPAT_INCLUDE_DIR}/"
   DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/compat"
+)
+
+install(
+  DIRECTORY "${BSK_ARCH_MIN_SRC_DIR}/"
+  DESTINATION "arch_min"
+  FILES_MATCHING
+    PATTERN "*.c"
+    PATTERN "*.cpp"
 )
 
 install(
@@ -185,18 +109,6 @@ install(
   DIRECTORY "${BSK_SDK_TOOLS_SRC_DIR}/"
   DESTINATION "tools"
   PATTERN "__pycache__" EXCLUDE
-)
-
-install(
-  TARGETS bsk_arch_min bsk_arch_utilities bsk_runtime_min bsk_sdk_headers bsk_plugin
-  EXPORT bsk-sdkTargets
-  ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}"
-)
-
-install(
-  EXPORT bsk-sdkTargets
-  NAMESPACE bsk::
-  DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bsk-sdk"
 )
 
 install(
