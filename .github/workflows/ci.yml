@@ -129,14 +129,13 @@ jobs:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist
 
-      - name: Install bsk-sdk wheel and matching Basilisk
-        # Install the locally built SDK wheel first, then read its embedded
-        # Basilisk sync stamp so CI tests the plugin against the exact matching
-        # bsk release instead of whichever version happens to be latest on PyPI.
+      - name: Install bsk-sdk wheel and Basilisk from patch/v2_10_x
         run: |
           pip install dist/*.whl --force-reinstall
-          BSK_VERSION=$(python -c "import bsk_sdk; print(bsk_sdk.bsk_version(), end='')")
-          pip install numpy "bsk==${BSK_VERSION}"
+          git clone --depth 1 --branch patch/v2_10_x \
+            https://github.com/AVSLab/basilisk.git _bsk_src
+          pip install numpy
+          pip install _bsk_src
         shell: bash
 
       - name: Build example plugin wheel
