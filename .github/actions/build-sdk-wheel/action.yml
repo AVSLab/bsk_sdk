@@ -47,14 +47,11 @@ runs:
         ")
         echo "tag=$BSK_TAG" >> $GITHUB_OUTPUT
 
-    - name: Checkout Basilisk submodule at release tag
+    - name: Clone Basilisk at release tag
       shell: bash
       run: |
-        git submodule update --init --depth 1 external/basilisk
-        git -C external/basilisk fetch origin \
-          refs/tags/${{ steps.bsk-tag.outputs.tag }}:refs/tags/${{ steps.bsk-tag.outputs.tag }} \
-          --depth 1
-        git -C external/basilisk checkout ${{ steps.bsk-tag.outputs.tag }}
+        git clone --depth 1 --branch ${{ steps.bsk-tag.outputs.tag }} \
+          https://github.com/AVSLab/basilisk.git external/basilisk
 
     - name: Sync Basilisk artifacts
       shell: bash
