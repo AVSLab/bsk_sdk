@@ -56,4 +56,12 @@ def test_cmake_config_files_present() -> None:
     config_dir = Path(bsk_sdk.cmake_config_dir())
     assert (config_dir / "bsk-sdkConfig.cmake").exists()
     assert (config_dir / "bsk-sdkConfigVersion.cmake").exists()
-    assert (config_dir / "bsk-sdkTargets.cmake").exists()
+    assert (config_dir / "bsk_add_swig_module.cmake").exists()
+    assert (config_dir / "bsk_generate_messages.cmake").exists()
+
+
+def test_sdk_source_dirs_exist() -> None:
+    root = Path(bsk_sdk.package_root())
+    for d in ("arch_min", "arch_utilities", "runtime_min"):
+        assert (root / d).is_dir(), f"SDK source dir missing: {d}"
+        assert any((root / d).iterdir()), f"SDK source dir is empty: {d}"

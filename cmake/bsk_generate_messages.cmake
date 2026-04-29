@@ -75,8 +75,9 @@ function(bsk_generate_messages)
 
   _bsk_find_build_deps()
 
+  set(_bsk_msg_sdk_sources "")
   if(NOT BSK_TARGET_LINK_LIBS)
-    _bsk_resolve_link_libs(BSK_TARGET_LINK_LIBS)
+    _bsk_resolve_sdk_sources(_bsk_msg_sdk_sources BSK_TARGET_LINK_LIBS)
   endif()
 
   _bsk_collect_swig_flags(_swig_flags)
@@ -141,6 +142,17 @@ function(bsk_generate_messages)
       ${_payload_name} "${BSK_OUTPUT_DIR}" "${BSK_TARGET_LINK_LIBS}"
       "${BSK_INCLUDE_DIRS};${_hdr_dir}"
     )
+
+    if(_bsk_msg_sdk_sources)
+      target_sources(${_payload_name} PRIVATE ${_bsk_msg_sdk_sources})
+      target_include_directories(${_payload_name} PRIVATE
+        "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities"
+        "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities/moduleIdGenerator"
+      )
+      if(MSVC)
+        target_compile_definitions(${_payload_name} PRIVATE _USE_MATH_DEFINES)
+      endif()
+    endif()
 
     list(APPEND _generated_targets ${_payload_name})
   endforeach()

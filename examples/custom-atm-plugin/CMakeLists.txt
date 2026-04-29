@@ -32,10 +32,8 @@ set(PLUGIN_PKG_DIR "${SKBUILD_PLATLIB_DIR}/custom_atm")
 file(GLOB PLUGIN_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/customExponentialAtmosphere/*.cpp"
 )
-
-# This plugin subclasses AtmosphereBase, so we need its implementation.
-# The SDK ships it in runtime_min/ for exactly this purpose.
-list(APPEND PLUGIN_SOURCES "${BSK_SDK_RUNTIME_MIN_DIR}/atmosphereBase.cpp")
+# Note: do NOT add SDK sources (arch_min, arch_utilities, runtime_min) here.
+# bsk_add_swig_module compiles them automatically into the plugin target.
 
 # Build the SWIG module. The SDK handles Python, SWIG, Eigen, and Basilisk
 # library resolution automatically.
