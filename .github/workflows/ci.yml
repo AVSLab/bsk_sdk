@@ -52,39 +52,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Determine BSK release tag
-        id: bsk-tag
-        shell: bash
-        run: |
-          BSK_VERSION=$(python -c "
-          from pathlib import Path
-          import re
-
-          text = Path('pyproject.toml').read_text()
-          match = re.search(r'(?m)^version\s*=\s*\"([^\"]+)\"', text)
-          if not match:
-              raise SystemExit('Could not find project.version in pyproject.toml')
-          print(match.group(1))
-          ")
-          echo "version=$BSK_VERSION" >> $GITHUB_OUTPUT
-          echo "tag=v$BSK_VERSION" >> $GITHUB_OUTPUT
-
-      - name: Checkout Basilisk submodule at release tag
-        shell: bash
-        run: |
-          git submodule update --init --depth 1 external/basilisk
-          git -C external/basilisk fetch origin \
-            refs/tags/${{ steps['bsk-tag'].outputs.tag }}:refs/tags/${{ steps['bsk-tag'].outputs.tag }} \
-            --depth 1
-          git -C external/basilisk checkout ${{ steps['bsk-tag'].outputs.tag }}
-
-      - name: Sync artifacts
-        run: python tools/sync_all.py
-
-      - name: Build wheel
-        run: |
-          pip install build
-          python -m build --wheel -o dist
+      - uses: ./.github/actions/build-sdk-wheel
+        with:
+          output-dir: dist
 
       - uses: actions/upload-artifact@v6
         with:
@@ -116,7 +86,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist
@@ -154,7 +124,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v6
         with:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist

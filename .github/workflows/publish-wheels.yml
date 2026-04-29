@@ -38,39 +38,10 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Determine BSK release tag
-        id: bsk-tag
-        shell: bash
-        run: |
-          BSK_TAG=$(python -c "
-          import tomllib
-          with open('pyproject.toml', 'rb') as f:
-              version = tomllib.load(f)['project']['version']
-          print('v' + version)
-          ")
-          echo "tag=$BSK_TAG" >> $GITHUB_OUTPUT
-
-      - name: Checkout Basilisk submodule at release tag
-        shell: bash
-        run: |
-          git submodule update --init --depth 1 external/basilisk
-          git -C external/basilisk fetch origin \
-            refs/tags/${{ steps['bsk-tag'].outputs.tag }}:refs/tags/${{ steps['bsk-tag'].outputs.tag }} \
-            --depth 1
-          git -C external/basilisk checkout ${{ steps['bsk-tag'].outputs.tag }}
-
-      - name: Sync Basilisk artifacts
-        run: python tools/sync_all.py
-
-      - name: Install build tooling
-        run: python -m pip install --upgrade pip build
-
-      - name: Build wheel and sdist
-        env:
-          # Sync artifacts are already present from the step above;
-          # the build backend will find them and skip auto-sync.
-          BSK_SDK_AUTO_SYNC: "0"
-        run: python -m build --outdir dist
+      - uses: ./.github/actions/build-sdk-wheel
+        with:
+          sdist: 'true'
+          output-dir: dist
 
       - uses: actions/upload-artifact@v6
         with:
