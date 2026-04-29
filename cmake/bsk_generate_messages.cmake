@@ -75,10 +75,8 @@ function(bsk_generate_messages)
 
   _bsk_find_build_deps()
 
-  set(_bsk_msg_sdk_sources "")
-  if(NOT BSK_TARGET_LINK_LIBS)
-    _bsk_resolve_sdk_sources(_bsk_msg_sdk_sources BSK_TARGET_LINK_LIBS)
-  endif()
+  _bsk_resolve_sdk_sources(_bsk_msg_sdk_sources _bsk_sdk_link_libs)
+  set(BSK_TARGET_LINK_LIBS ${_bsk_sdk_link_libs} ${BSK_TARGET_LINK_LIBS})
 
   _bsk_collect_swig_flags(_swig_flags)
   _bsk_resolve_msg_autosource_dir(_msg_autosrc)
