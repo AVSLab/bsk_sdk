@@ -135,7 +135,7 @@ jobs:
           git clone --depth 1 --branch patch/v2_10_x \
             https://github.com/AVSLab/basilisk.git _bsk_src
           pip install numpy
-          pip install _bsk_src
+          pip install ./_bsk_src
         shell: bash
 
       - name: Build example plugin wheel
