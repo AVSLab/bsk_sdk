@@ -40,7 +40,7 @@ jobs:
 
       - uses: ./.github/actions/build-sdk-wheel
         with:
-          sdist: 'true'
+          sdist: "true"
           output-dir: dist
 
       - uses: actions/upload-artifact@v6
