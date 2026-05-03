@@ -252,7 +252,7 @@ except ImportError:\n\
       "Plugins compiled with this SWIG version cannot exchange objects with "
       "Basilisk across module boundaries.\n"
       "Install a SWIG version whose runtime epoch matches bsk (epoch ${_bsk_rt}):\n"
-      "  SWIG runtime epoch 5 -> SWIG 4.4.1+  (pip install \"swig>=4.4.1\")\n"
+      "  SWIG runtime epoch 5 -> SWIG 4.4.1    (pip install \"swig==4.4.1\")\n"
       "  SWIG runtime epoch 4 -> SWIG 4.2.x or 4.3.x  (pip install \"swig>=4.2.1,<4.4.0\")"
     )
   endif()
