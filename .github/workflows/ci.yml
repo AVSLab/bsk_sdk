@@ -129,7 +129,7 @@ jobs:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist
 
-      - name: Install bsk-sdk wheel and Basilisk from patch/v2_10_x
+      - name: Install bsk-sdk wheel and Basilisk
         run: |
           pip install dist/*.whl --force-reinstall
           git clone --depth 1 --branch patch/v2_10_x \

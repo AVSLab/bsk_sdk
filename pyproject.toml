@@ -18,7 +18,7 @@ dependencies = [
   # SWIG 4.4.1+ uses SWIG_RUNTIME_VERSION "5" (epoch 5), which bsk also uses
   # from 2.10.1 onward. Both bsk and bsk-sdk require >=4.4.1 to stay on epoch 5.
   # The cmake check in bsk_add_swig_module enforces the match at build time.
-  "swig>=4.4.1",
+  "swig==4.4.1",
 ]
 
 [project.entry-points."cmake.prefix"]
