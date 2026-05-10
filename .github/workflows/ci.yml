@@ -23,6 +23,11 @@ on:
   push:
     branches: [master, develop]
   workflow_dispatch:
+    inputs:
+      bsk_version:
+        description: "Override BSK version (e.g. 2.10.2rc1). Defaults to _bsk_version.txt."
+        required: false
+        default: ""
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -45,21 +50,50 @@ jobs:
 
     steps:
       - uses: actions/checkout@v5
-        with:
-          submodules: false
 
       - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python }}
 
-      - uses: ./.github/actions/build-sdk-wheel
+      - name: Resolve BSK version
+        id: bsk
+        shell: bash
+        run: |
+          OVERRIDE="${{ inputs.bsk_version }}"
+          if [[ -n "$OVERRIDE" ]]; then
+            echo "version=${OVERRIDE}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=$(tr -d '[:space:]' < src/bsk_sdk/_bsk_version.txt)" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: ./.github/actions/setup-bsk
         with:
-          output-dir: dist
+          version: ${{ steps.bsk.outputs.version }}
+          clone-source: "true"
+          install-package: "false"
+
+      - name: Report environment
+        shell: bash
+        run: |
+          python --version
+          echo "BSK source: $(git -C external/basilisk log -1 --oneline)"
+
+      - name: Sync artifacts
+        run: python tools/sync_all.py
+
+      - name: Build wheel
+        shell: bash
+        run: |
+          pip install build
+          python -m build --wheel -o dist
+        env:
+          BSK_SDK_AUTO_SYNC: "0"
 
       - uses: actions/upload-artifact@v6
         with:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist/*.whl
+          retention-days: 1
 
   test:
     name: Test wheel (${{ matrix.os }}, ${{ matrix.python_label }})
@@ -80,7 +114,6 @@ jobs:
       - uses: actions/checkout@v5
         with:
           sparse-checkout: tests
-          sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v6
         with:
@@ -92,8 +125,8 @@ jobs:
           path: dist
 
       - name: Install wheel and test dependencies
-        run: pip install dist/*.whl pytest
         shell: bash
+        run: pip install dist/*.whl pytest
 
       - name: Run smoke tests
         run: pytest tests/test_smoke.py -v
@@ -117,8 +150,8 @@ jobs:
       - uses: actions/checkout@v5
         with:
           sparse-checkout: |
+            .github/actions
             examples
-          sparse-checkout-cone-mode: false
 
       - uses: actions/setup-python@v6
         with:
@@ -129,25 +162,30 @@ jobs:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
           path: dist
 
-      - name: Install bsk-sdk wheel and Basilisk
+      - name: Install SDK wheel and read BSK version
+        id: bsk
+        shell: bash
         run: |
           pip install dist/*.whl --force-reinstall
-          git clone --depth 1 --branch develop \
-            https://github.com/AVSLab/basilisk.git _bsk_src
-          pip install numpy
-          pip install ./_bsk_src
+          echo "version=$(python -c "import bsk_sdk; print(bsk_sdk.bsk_version(), end='')")" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/setup-bsk
+        with:
+          version: ${{ steps.bsk.outputs.version }}
+          clone-source: "false"
+          install-package: "true"
+
+      - name: Report environment
         shell: bash
+        run: pip show bsk swig | grep -E "^(Name|Version):" && python -c "import bsk_sdk; print('bsk-sdk:', bsk_sdk.__version__, '| synced from BSK:', bsk_sdk.bsk_version())"
 
       - name: Build example plugin wheel
-        # Use --no-isolation so the build inherits the environment where the
-        # locally built bsk-sdk wheel is already installed.  This guarantees CI
-        # always tests the current branch's SDK — never a stale PyPI version.
-        # (The example's pyproject.toml build-system.requires is still correct
-        # for real users doing normal isolated builds from PyPI.)
+        # --no-isolation so the build inherits the locally installed bsk-sdk wheel,
+        # guaranteeing CI always tests the current branch rather than a stale PyPI version.
+        shell: bash
         run: |
           pip install build scikit-build-core
           python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
-        shell: bash
 
       - uses: actions/upload-artifact@v6
         with:
@@ -156,8 +194,54 @@ jobs:
           retention-days: 7
 
       - name: Install plugin wheel and test dependencies
-        run: pip install plugin-dist/*.whl pytest
         shell: bash
+        run: pip install plugin-dist/*.whl pytest
 
       - name: Run example plugin tests
         run: pytest examples/custom-atm-plugin/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
+
+  # TODO: remove once nightly.yml is merged — inlined here so this PR is tested
+  # against the BSK nightly wheel before the nightly workflow itself exists.
+  nightly:
+    name: Nightly (BSK develop)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+
+      - name: Clone Basilisk develop
+        run: |
+          git clone --depth 1 --branch develop \
+            https://github.com/AVSLab/basilisk.git external/basilisk
+
+      - name: Install BSK nightly wheel
+        run: |
+          pip install --pre \
+            --index-url https://avslab.github.io/basilisk/nightly/ \
+            --extra-index-url https://pypi.org/simple/ \
+            bsk
+
+      - name: Sync and build SDK
+        run: |
+          python tools/sync_all.py
+          pip install build
+          python -m build --wheel -o dist
+          pip install dist/*.whl
+        env:
+          BSK_SDK_AUTO_SYNC: "0"
+
+      - name: Run smoke tests
+        run: |
+          pip install pytest
+          pytest tests/test_smoke.py -v
+
+      - name: Build and test example plugin
+        run: |
+          pip install scikit-build-core
+          python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
+          pip install plugin-dist/*.whl
+          pytest examples/custom-atm-plugin/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v

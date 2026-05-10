@@ -18,6 +18,10 @@
 
 name: Publish Wheels
 
+# Triggered by version tags. Two routing cases handled in the publish job:
+#   v2.X.Y    => PyPI
+#   v2.X.Yrc1 => TestPyPI  (RC tags also match v[0-9]*)
+#   test*     => TestPyPI  (manual test publishes)
 on:
   push:
     tags:
@@ -26,7 +30,7 @@ on:
 
 jobs:
   build:
-    name: Build wheel and sdist
+    name: Build distributions
     runs-on: ubuntu-latest
 
     steps:
@@ -38,10 +42,36 @@ jobs:
         with:
           python-version: "3.14"
 
-      - uses: ./.github/actions/build-sdk-wheel
+      - name: Read and validate BSK version
+        id: bsk
+        shell: bash
+        run: |
+          BSK=$(tr -d '[:space:]' < src/bsk_sdk/_bsk_version.txt)
+          if [[ -z "$BSK" ]]; then
+            echo "_bsk_version.txt is empty" >&2; exit 1
+          fi
+          if [[ "$BSK" =~ beta|alpha ]]; then
+            echo "Cannot publish a pre-release SDK version (${BSK})." >&2
+            echo "Update _bsk_version.txt to a release or RC version before tagging." >&2
+            exit 1
+          fi
+          echo "version=${BSK}" >> "$GITHUB_OUTPUT"
+
+      - uses: ./.github/actions/setup-bsk
         with:
-          sdist: "true"
-          output-dir: dist
+          version: ${{ steps.bsk.outputs.version }}
+          clone-source: "true"
+          install-package: "false"
+
+      - name: Sync Basilisk artifacts
+        run: python tools/sync_all.py
+
+      - name: Build wheel and sdist
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build --outdir dist
+        env:
+          BSK_SDK_AUTO_SYNC: "0"
 
       - uses: actions/upload-artifact@v6
         with:
@@ -57,8 +87,7 @@ jobs:
       contents: read
 
     steps:
-      - name: Download distributions
-        uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v7
         with:
           name: dist
           path: dist
@@ -68,8 +97,8 @@ jobs:
           python -m pip install --upgrade pip twine
           python -m twine check dist/*
 
-      - name: Publish to TestPyPI (test tags)
-        if: startsWith(github.ref, 'refs/tags/test')
+      - name: Publish to TestPyPI (RC and test tags)
+        if: contains(github.ref_name, 'rc') || startsWith(github.ref_name, 'test')
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
@@ -78,9 +107,9 @@ jobs:
           verbose: true
 
       - name: Publish to PyPI (release tags)
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: "!contains(github.ref_name, 'rc') && !startsWith(github.ref_name, 'test')"
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist
-          skip-existing: true
+          skip-existing: false
           verbose: true
