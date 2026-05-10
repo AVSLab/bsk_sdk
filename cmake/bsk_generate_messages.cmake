@@ -106,15 +106,15 @@ function(bsk_generate_messages)
     endif()
 
     # Generate struct metadata JSON from the header using libclang
-    set(_json_out "${_json_dir}/${_payload_name}.json")
+    set(_meta_out "${_json_dir}/${_payload_name}.json")
     set(_depfile "${_json_dir}/${_payload_name}.d")
     add_custom_command(
-      OUTPUT "${_json_out}"
+      OUTPUT "${_meta_out}"
       COMMAND ${Python3_EXECUTABLE}
               "${_gen_meta}"
               "${_hdr_abs}"
               "${_payload_name}"
-              "${_json_out}"
+              "${_meta_out}"
               --depfile "${_depfile}"
               --
               -x ${_clang_lang}
@@ -133,14 +133,55 @@ function(bsk_generate_messages)
               "${_gen_swig}"
               "${_i_out}" "${_hdr_abs}" "${_payload_name}" "${_hdr_dir}"
               "${_gen_c}"
-              "${_json_out}" 0
-      DEPENDS "${_hdr_abs}" "${_json_out}" "${_gen_swig}" "${_msg_autosrc}/msgInterfacePy.i.in"
+              "${_meta_out}" 0
+      DEPENDS "${_hdr_abs}" "${_meta_out}" "${_gen_swig}" "${_msg_autosrc}/msgInterfacePy.i.in"
       WORKING_DIRECTORY "${_msg_autosrc}"
       COMMENT "Generating SWIG interface for ${_payload_name}"
       VERBATIM
     )
 
+    # cmake's UseSWIG scans .i files for %include dependencies at generate time,
+    # so the file must exist on disk before swig_add_library runs. Bootstrap both
+    # the JSON and the .i once at configure time. add_custom_command handles all
+    # subsequent incremental rebuilds.
+    if(NOT EXISTS "${_meta_out}")
+      execute_process(
+        COMMAND ${Python3_EXECUTABLE}
+                "${_gen_meta}"
+                "${_hdr_abs}"
+                "${_payload_name}"
+                "${_meta_out}"
+                --
+                -x ${_clang_lang}
+                ${_swig_flags}
+        RESULT_VARIABLE _gen_rc
+        ERROR_VARIABLE  _gen_err
+      )
+      if(NOT _gen_rc EQUAL 0)
+        message(FATAL_ERROR
+          "generatePayloadMetaJson.py failed for ${_payload_name}:\n${_gen_err}")
+      endif()
+    endif()
+
+    if(NOT EXISTS "${_i_out}")
+      execute_process(
+        COMMAND ${Python3_EXECUTABLE}
+                "${_gen_swig}"
+                "${_i_out}" "${_hdr_abs}" "${_payload_name}" "${_hdr_dir}"
+                "${_gen_c}"
+                "${_meta_out}" 0
+        WORKING_DIRECTORY "${_msg_autosrc}"
+        RESULT_VARIABLE _gen_rc
+        ERROR_VARIABLE  _gen_err
+      )
+      if(NOT _gen_rc EQUAL 0)
+        message(FATAL_ERROR
+          "generateSWIGModules.py failed for ${_payload_name}:\n${_gen_err}")
+      endif()
+    endif()
+
     # Build the SWIG module
+    set_source_files_properties("${_i_out}" PROPERTIES GENERATED TRUE)
     set_property(SOURCE "${_i_out}" PROPERTY CPLUSPLUS ON)
     set_property(SOURCE "${_i_out}" PROPERTY USE_TARGET_INCLUDE_DIRECTORIES TRUE)
     set_property(SOURCE "${_i_out}" PROPERTY SWIG_FLAGS ${_swig_flags})
