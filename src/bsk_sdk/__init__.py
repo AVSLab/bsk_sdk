@@ -38,7 +38,13 @@ support files, CMake config, and tools.
 """
 
 from importlib import resources
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
+
+try:
+    __version__ = version("bsk-sdk")
+except PackageNotFoundError:
+    __version__ = "unknown"
 
 
 def package_root() -> Path:
@@ -80,6 +86,7 @@ def msg_autosource_dir() -> str:
 
 
 __all__ = [
+    "__version__",
     "package_root",
     "bsk_version",
     "cmake_config_dir",
