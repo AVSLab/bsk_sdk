@@ -1,4 +1,4 @@
 [submodule "external/basilisk"]
 	path = external/basilisk
 	url = https://github.com/AVSLab/basilisk.git
-	branch = master
+	branch = develop
