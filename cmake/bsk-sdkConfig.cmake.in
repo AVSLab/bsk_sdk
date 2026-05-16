@@ -54,7 +54,10 @@ function(_bsk_sdk_check_basilisk_version)
     return()
   endif()
 
-  if(NOT _bsk_installed_version VERSION_EQUAL BSK_SDK_BSK_VERSION)
+  # Use STREQUAL rather than VERSION_EQUAL as CMake version comparisons truncate
+  # non-numeric suffixes, so "2.11.0beta" would compare equal to "2.11.0" and
+  # silently skip the mismatch path.
+  if(NOT _bsk_installed_version STREQUAL BSK_SDK_BSK_VERSION)
     # Pre-release SDK versions (beta/alpha/rc) track BSK develop and are never
     # published as pip packages, so a strict version match is impossible.
     # Warn instead of erroring so contributors can still build against a release BSK.
@@ -71,7 +74,7 @@ function(_bsk_sdk_check_basilisk_version)
         "  Installed Basilisk is ${_bsk_installed_version}\n\n"
         "Plugins compiled against mismatched headers will have ABI incompatibilities.\n"
         "Either install the matching Basilisk version or re-sync the SDK:\n"
-        "  pip install basilisk==${BSK_SDK_BSK_VERSION}\n"
+        "  pip install bsk==${BSK_SDK_BSK_VERSION}\n"
         "  # or: cd external/basilisk && git checkout v${_bsk_installed_version} && cd ../.. && python3 tools/sync_all.py"
       )
     endif()
