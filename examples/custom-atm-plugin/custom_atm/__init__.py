@@ -25,6 +25,11 @@ from Basilisk.architecture import cSysModel as _cSysModel
 # this line the import fails with a confusing ModuleNotFoundError.
 sys.modules.setdefault("cSysModel", _cSysModel)
 
+# Import generated custom message bindings before SWIG module wrappers.  This
+# registers the plugin's Message<T> and Recorder<T> proxy classes so custom
+# message fields exposed by modules have their Python methods, including
+# recorder(), without requiring users to import custom_atm.messaging manually.
+from . import messaging
 from . import customExponentialAtmosphere
 
-__all__ = ["customExponentialAtmosphere"]
+__all__ = ["customExponentialAtmosphere", "messaging"]

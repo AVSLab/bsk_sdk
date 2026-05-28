@@ -33,3 +33,18 @@ python -m build --wheel --no-isolation
 pip install dist/*.whl pytest
 pytest customExponentialAtmosphere/_UnitTest/ -v
 ```
+
+## Custom message recorders
+
+If a plugin defines custom messages with `bsk_generate_messages()`, import the
+generated message package from the plugin's top-level `__init__.py` before
+importing module wrappers:
+
+```python
+from . import messaging
+from . import myModule
+```
+
+This mirrors Basilisk's own package initialization. It registers the custom
+`Message<T>` and `Recorder<T>` SWIG proxy classes so users can call
+`module.customOutMsg.recorder()` without explicitly importing the message type.

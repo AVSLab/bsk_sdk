@@ -22,13 +22,19 @@ custom_atm = pytest.importorskip("custom_atm", reason="custom_atm plugin not ins
 from Basilisk.architecture import messaging, bskLogging  # noqa: E402
 from Basilisk.utilities import SimulationBaseClass, macros  # noqa: E402
 from custom_atm import customExponentialAtmosphere  # noqa: E402
-from custom_atm.messaging import CustomAtmStatusMsg, CustomAtmStatusMsgPayload  # noqa: E402
 
 
 def _window_density(log) -> float:
     vals = list(log.neutralDensity)
     assert vals, "No density samples were recorded"
     return float(max(vals))
+
+
+def _plugin_messaging():
+    assert hasattr(custom_atm, "messaging"), (
+        "custom_atm.__init__ must import generated messaging before module wrappers"
+    )
+    return custom_atm.messaging
 
 
 @pytest.fixture()
@@ -88,6 +94,15 @@ def test_plugin_links_architecture_utilities():
     assert radius == pytest.approx(semi_major_axis, rel=1e-12, abs=0.0)
 
 
+def test_package_import_exposes_generated_messaging():
+    """Package import exposes generated message bindings and recorders."""
+    plugin_messaging = _plugin_messaging()
+    msg = plugin_messaging.CustomAtmStatusMsg()
+    rec = msg.recorder()
+
+    assert rec is not None
+
+
 def test_density_at_400km(sim_env):
     sim, atmosphere, log, dt = sim_env
     sim.ConfigureStopTime(dt)
@@ -110,11 +125,12 @@ def test_density_positive(sim_env):
 def test_status_message_updates_density(sim_env):
     sim, atmosphere, log, dt = sim_env
 
-    status_pl = CustomAtmStatusMsgPayload()
+    plugin_messaging = _plugin_messaging()
+    status_pl = plugin_messaging.CustomAtmStatusMsgPayload()
     status_pl.density = 2.0
     status_pl.scaleHeight = 8_500.0
     status_pl.modelValid = 1
-    status_msg = CustomAtmStatusMsg().write(status_pl)
+    status_msg = plugin_messaging.CustomAtmStatusMsg().write(status_pl)
     atmosphere.connectAtmStatus(status_msg)
 
     sim.ConfigureStopTime(dt)
@@ -130,11 +146,12 @@ def test_invalid_status_message_ignored(sim_env):
     sim, atmosphere, log, dt = sim_env
 
     # modelValid=0 — should be ignored, density stays at default baseDensity
-    status_pl = CustomAtmStatusMsgPayload()
+    plugin_messaging = _plugin_messaging()
+    status_pl = plugin_messaging.CustomAtmStatusMsgPayload()
     status_pl.density = 999.0
     status_pl.scaleHeight = 1.0
     status_pl.modelValid = 0
-    status_msg = CustomAtmStatusMsg().write(status_pl)
+    status_msg = plugin_messaging.CustomAtmStatusMsg().write(status_pl)
     atmosphere.connectAtmStatus(status_msg)
 
     sim.ConfigureStopTime(dt)
