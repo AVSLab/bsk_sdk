@@ -36,11 +36,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ["3.9", "3.13"]
+        python: ["3.9", "3.14"]
         include:
           - python: "3.9"
             python_label: "MIN Python"
-          - python: "3.13"
+          - python: "3.14"
             python_label: "MAX Python"
 
     steps:
@@ -69,11 +69,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ["3.9", "3.13"]
+        python: ["3.9", "3.14"]
         include:
           - python: "3.9"
             python_label: "MIN Python"
-          - python: "3.13"
+          - python: "3.14"
             python_label: "MAX Python"
 
     steps:
@@ -106,11 +106,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python: ["3.9", "3.13"]
+        python: ["3.9", "3.14"]
         include:
           - python: "3.9"
             python_label: "MIN Python"
-          - python: "3.13"
+          - python: "3.14"
             python_label: "MAX Python"
 
     steps:
