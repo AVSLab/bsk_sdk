@@ -155,10 +155,18 @@ function(bsk_generate_messages)
     list(APPEND _generated_targets ${_payload_name})
   endforeach()
 
-  # Generate __init__.py that re-exports all message payloads
+  # Generate __init__.py that re-exports all message payloads. Importing this
+  # package also registers the SWIG proxy classes for the generated Message<T>
+  # and Recorder<T> specializations, so plugin package __init__.py files should
+  # import their generated messaging package before importing module wrappers.
   file(MAKE_DIRECTORY "${BSK_OUTPUT_DIR}")
   set(_init_file "${BSK_OUTPUT_DIR}/__init__.py")
-  file(WRITE "${_init_file}" "")
+  file(WRITE "${_init_file}"
+    "\"\"\"Generated Basilisk message bindings for this plugin.\n\n"
+    "Importing this package registers custom Message<T> and Recorder<T> SWIG\n"
+    "proxy classes, including the recorder() methods on custom messages.\n"
+    "\"\"\"\n\n"
+  )
   foreach(_hdr IN LISTS BSK_MSG_HEADERS)
     get_filename_component(_payload_name "${_hdr}" NAME_WE)
     file(APPEND "${_init_file}" "from .${_payload_name} import *\n")
