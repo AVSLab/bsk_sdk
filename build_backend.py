@@ -56,7 +56,14 @@ def _required_sync_paths(repo_root: Path) -> list[Path]:
 
 def _required_sync_files(repo_root: Path) -> list[Path]:
     """Return individual files that must exist before a build can proceed."""
-    return [repo_root / "src" / "bsk_sdk" / "_bsk_version.txt"]
+    msg_auto = repo_root / "tools" / "msgAutoSource"
+    return [
+        repo_root / "src" / "bsk_sdk" / "_bsk_version.txt",
+        msg_auto / "generatePayloadMetaJson.py",
+        msg_auto / "generateSWIGModules.py",
+        msg_auto / "msgInterfacePy.i.in",
+        msg_auto / "cMsgCInterfacePy.i.in",
+    ]
 
 
 def _has_any_file(path: Path) -> bool:
