@@ -65,3 +65,11 @@ def test_sdk_source_dirs_exist() -> None:
     for d in ("arch_min", "arch_utilities", "runtime_min"):
         assert (root / d).is_dir(), f"SDK source dir missing: {d}"
         assert any((root / d).iterdir()), f"SDK source dir is empty: {d}"
+
+
+def test_msg_autosource_generators_present() -> None:
+    autosrc = Path(bsk_sdk.msg_autosource_dir())
+    assert autosrc.is_dir(), f"msg_autosource_dir() does not exist: {autosrc}"
+    for name in ("generatePayloadMetaJson.py", "generateSWIGModules.py",
+                 "msgInterfacePy.i.in", "cMsgCInterfacePy.i.in"):
+        assert (autosrc / name).exists(), f"Missing msgAutoSource file: {name}"

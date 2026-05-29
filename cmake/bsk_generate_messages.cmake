@@ -22,10 +22,13 @@ if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/bsk_add_swig_module.cmake")
   include("${CMAKE_CURRENT_LIST_DIR}/bsk_add_swig_module.cmake")
 endif()
 
-# Locate the msgAutoSource directory that ships generateSWIGModules.py.
+# Locate the msgAutoSource directory that ships generateSWIGModules.py and
+# generatePayloadMetaJson.py.  Both scripts must be present — the JSON
+# generator was added in BSK 2.11 and is required by bsk_generate_messages().
 function(_bsk_resolve_msg_autosource_dir out_var)
   if(DEFINED BSK_SDK_MSG_AUTOSOURCE_DIR
-      AND EXISTS "${BSK_SDK_MSG_AUTOSOURCE_DIR}/generateSWIGModules.py")
+      AND EXISTS "${BSK_SDK_MSG_AUTOSOURCE_DIR}/generateSWIGModules.py"
+      AND EXISTS "${BSK_SDK_MSG_AUTOSOURCE_DIR}/generatePayloadMetaJson.py")
     set(${out_var} "${BSK_SDK_MSG_AUTOSOURCE_DIR}" PARENT_SCOPE)
     return()
   endif()
@@ -44,7 +47,8 @@ function(_bsk_resolve_msg_autosource_dir out_var)
   )
 
   foreach(_cand IN LISTS _candidates)
-    if(EXISTS "${_cand}/generateSWIGModules.py")
+    if(EXISTS "${_cand}/generateSWIGModules.py"
+        AND EXISTS "${_cand}/generatePayloadMetaJson.py")
       set(${out_var} "${_cand}" PARENT_SCOPE)
       return()
     endif()
@@ -52,9 +56,11 @@ function(_bsk_resolve_msg_autosource_dir out_var)
 
   string(JOIN "\n  " _cand_list ${_candidates})
   message(FATAL_ERROR
-    "bsk-sdk message generator not found.\n\n"
-    "Looked for generateSWIGModules.py under:\n"
+    "bsk-sdk message generators not found.\n\n"
+    "Looked for generateSWIGModules.py and generatePayloadMetaJson.py under:\n"
     "  ${_cand_list}\n\n"
+    "Re-sync the SDK tools (requires BSK >= 2.11):\n"
+    "  python3 tools/sync_all.py --sync-submodules\n\n"
     "Or set BSK_SDK_MSG_AUTOSOURCE_DIR explicitly."
   )
 endfunction()
