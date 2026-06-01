@@ -84,12 +84,17 @@ endfunction()
 
 # Run find_package for Python, SWIG, and Eigen3.
 macro(_bsk_find_build_deps)
-  find_package(Python3 QUIET COMPONENTS Interpreter)
-  _bsk_setup_pip_swig("${Python3_EXECUTABLE}")
-  find_package(SWIG REQUIRED COMPONENTS python)
-  include(${SWIG_USE_FILE})
-  find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
-  find_package(Eigen3 CONFIG REQUIRED)
+  # Uses a global property as the guard so the check survives function scopes.
+  get_property(_bsk_deps_done GLOBAL PROPERTY _BSK_BUILD_DEPS_FOUND)
+  if(NOT _bsk_deps_done)
+    find_package(Python3 QUIET COMPONENTS Interpreter)
+    _bsk_setup_pip_swig("${Python3_EXECUTABLE}")
+    find_package(SWIG REQUIRED COMPONENTS python)
+    include(${SWIG_USE_FILE})
+    find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
+    find_package(Eigen3 CONFIG REQUIRED)
+    set_property(GLOBAL PROPERTY _BSK_BUILD_DEPS_FOUND TRUE)
+  endif()
 endmacro()
 
 # Collect SDK implementation sources to compile directly into the plugin.
