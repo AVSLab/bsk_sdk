@@ -84,17 +84,30 @@ endfunction()
 
 # Run find_package for Python, SWIG, and Eigen3.
 macro(_bsk_find_build_deps)
-  # Uses a global property as the guard so the check survives function scopes.
-  get_property(_bsk_deps_done GLOBAL PROPERTY _BSK_BUILD_DEPS_FOUND)
-  if(NOT _bsk_deps_done)
-    find_package(Python3 QUIET COMPONENTS Interpreter)
+  find_package(Python3 QUIET COMPONENTS Interpreter)
+
+  # _bsk_setup_pip_swig() is the only expensive step here: it spawns several
+  # Python subprocesses (including importing Basilisk) to locate the pip SWIG
+  # and validate its runtime epoch. Everything it sets is global and persistent
+  # (the SWIG_EXECUTABLE / SWIG_DIR cache entries and $ENV{SWIG_LIB}), so guard
+  # it with a global property to run only once per configure regardless of how
+  # many modules call this macro.
+  get_property(_bsk_pip_swig_done GLOBAL PROPERTY _BSK_PIP_SWIG_DONE)
+  if(NOT _bsk_pip_swig_done)
     _bsk_setup_pip_swig("${Python3_EXECUTABLE}")
-    find_package(SWIG REQUIRED COMPONENTS python)
-    include(${SWIG_USE_FILE})
-    find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
-    find_package(Eigen3 CONFIG REQUIRED)
-    set_property(GLOBAL PROPERTY _BSK_BUILD_DEPS_FOUND TRUE)
+    set_property(GLOBAL PROPERTY _BSK_PIP_SWIG_DONE TRUE)
   endif()
+
+  # These calls are cheap on repeat (results are cached) but MUST run in every
+  # calling scope: swig_add_library() and the SWIG/Eigen imported targets rely
+  # on this setup being present in the function scope that invokes them. Guarding
+  # them out caused bsk_generate_messages() to emit message modules whose SWIG
+  # wrapper was generated but never compiled in, producing .so files missing
+  # their PyInit_ entry point.
+  find_package(SWIG REQUIRED COMPONENTS python)
+  include(${SWIG_USE_FILE})
+  find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
+  find_package(Eigen3 CONFIG REQUIRED)
 endmacro()
 
 # Collect SDK implementation sources to compile directly into the plugin.
