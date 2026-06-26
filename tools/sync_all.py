@@ -108,6 +108,7 @@ def main() -> int:
 
     scripts = [
         "sync_headers.py",
+        "sync_c_msg_interfaces.py",
         "sync_runtime.py",
         "sync_sources.py",
         "sync_swig.py",

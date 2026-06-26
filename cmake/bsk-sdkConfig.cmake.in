@@ -7,6 +7,7 @@ get_filename_component(_bsk_sdk_pkg_dir    "${_bsk_sdk_lib_dir}" PATH)      # <p
 
 set(BSK_SDK_PKG_DIR            "${_bsk_sdk_pkg_dir}"                CACHE PATH "bsk-sdk package root")
 set(BSK_SDK_INCLUDE_DIR        "${BSK_SDK_PKG_DIR}/include"         CACHE PATH "bsk-sdk include root")
+set(BSK_SDK_C_MSG_INTERFACE_DIR "${BSK_SDK_INCLUDE_DIR}/cMsgCInterface" CACHE PATH "bsk-sdk built-in C message interface dir")
 set(BSK_SDK_COMPAT_INCLUDE_DIR "${BSK_SDK_INCLUDE_DIR}/compat"      CACHE PATH "bsk-sdk compat include dir")
 set(BSK_SDK_ARCH_MIN_DIR       "${BSK_SDK_PKG_DIR}/arch_min"        CACHE PATH "bsk-sdk arch_min sources dir")
 set(BSK_SDK_ARCH_UTILITIES_DIR "${BSK_SDK_PKG_DIR}/arch_utilities"  CACHE PATH "bsk-sdk arch_utilities sources dir")
@@ -27,7 +28,7 @@ if(NOT TARGET bsk::sdk_headers)
   add_library(bsk::sdk_headers IMPORTED INTERFACE GLOBAL)
   set_target_properties(bsk::sdk_headers PROPERTIES
     INTERFACE_INCLUDE_DIRECTORIES
-      "${BSK_SDK_INCLUDE_DIR};${BSK_SDK_COMPAT_INCLUDE_DIR};${BSK_SDK_INCLUDE_DIR}/Basilisk"
+      "${BSK_SDK_INCLUDE_DIR};${BSK_SDK_C_MSG_INTERFACE_DIR};${BSK_SDK_COMPAT_INCLUDE_DIR};${BSK_SDK_INCLUDE_DIR}/Basilisk"
     INTERFACE_COMPILE_FEATURES "cxx_std_17"
   )
 endif()

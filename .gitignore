@@ -1,6 +1,8 @@
 
 src/bsk_sdk/include/Basilisk/*
+src/bsk_sdk/include/cMsgCInterface/*
 src/bsk_sdk/arch_min/*
+src/bsk_sdk/arch_utilities/*
 src/bsk_sdk/include_compat/*
 src/bsk_sdk/runtime_min/*
 src/bsk_sdk/swig/*

@@ -68,9 +68,14 @@ def include_dirs() -> list[str]:
     root = package_root()
     return [
         str(root / "include"),
+        str(root / "include" / "cMsgCInterface"),
         str(root / "include" / "Basilisk"),
         str(root / "include" / "compat"),
     ]
+
+
+def c_msg_interface_dir() -> str:
+    return str(package_root() / "include" / "cMsgCInterface")
 
 
 def swig_dir() -> str:
@@ -92,6 +97,7 @@ __all__ = [
     "cmake_config_dir",
     "include_dir",
     "include_dirs",
+    "c_msg_interface_dir",
     "swig_dir",
     "tools_dir",
     "msg_autosource_dir",

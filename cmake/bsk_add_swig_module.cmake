@@ -130,12 +130,25 @@ function(_bsk_resolve_sdk_sources out_sources out_link_libs)
   endif()
 endfunction()
 
+# Collect the pre-generated built-in C message interface definitions shipped by
+# the SDK. These mirror Basilisk's cMsgCInterface autoSource output so C modules
+# can include "cMsgCInterface/<Name>_C.h" without per-message CMake wiring.
+function(_bsk_resolve_builtin_c_msg_interface_sources out_sources)
+  if(DEFINED BSK_SDK_C_MSG_INTERFACE_DIR AND EXISTS "${BSK_SDK_C_MSG_INTERFACE_DIR}")
+    file(GLOB _srcs "${BSK_SDK_C_MSG_INTERFACE_DIR}/*.cpp")
+    set(${out_sources} "${_srcs}" PARENT_SCOPE)
+  else()
+    set(${out_sources} "" PARENT_SCOPE)
+  endif()
+endfunction()
+
 # Apply the standard include directories, link libraries, PIC flag, and
 # MSVC multi-config output directory overrides to a SWIG module target.
 function(_bsk_configure_swig_target target_name output_dir link_libs extra_include_dirs)
   target_include_directories(${target_name} PRIVATE
     ${extra_include_dirs}
     "${BSK_SDK_INCLUDE_DIR}"
+    $<$<BOOL:${BSK_SDK_C_MSG_INTERFACE_DIR}>:${BSK_SDK_C_MSG_INTERFACE_DIR}>
     "${BSK_SDK_INCLUDE_DIR}/Basilisk"
     "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture"
     "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/_GeneralModuleFiles"
@@ -293,6 +306,7 @@ function(bsk_add_swig_module)
 
   _bsk_resolve_sdk_sources(_bsk_sdk_sources _bsk_sdk_link_libs)
   set(BSK_LINK_LIBS ${_bsk_sdk_link_libs} ${BSK_LINK_LIBS})
+  _bsk_resolve_builtin_c_msg_interface_sources(_bsk_builtin_c_msg_sources)
 
   _bsk_collect_swig_flags(_swig_flags)
 
@@ -316,8 +330,11 @@ function(bsk_add_swig_module)
     ${BSK_TARGET} "${BSK_OUTPUT_DIR}" "${BSK_LINK_LIBS}" "${BSK_INCLUDE_DIRS}"
   )
 
-  if(_bsk_sdk_sources)
-    target_sources(${BSK_TARGET} PRIVATE ${_bsk_sdk_sources})
+  if(_bsk_sdk_sources OR _bsk_builtin_c_msg_sources)
+    target_sources(${BSK_TARGET} PRIVATE
+      ${_bsk_sdk_sources}
+      ${_bsk_builtin_c_msg_sources}
+    )
     target_include_directories(${BSK_TARGET} PRIVATE
       "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities"
       "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities/moduleIdGenerator"

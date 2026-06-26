@@ -8,6 +8,7 @@ include(GNUInstallDirs)
 
 # Python wheel layout
 set(BSK_SDK_INCLUDE_SRC_DIR       "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/include")
+set(BSK_SDK_C_MSG_INTERFACE_DIR   "${BSK_SDK_INCLUDE_SRC_DIR}/cMsgCInterface")
 set(BSK_ARCH_MIN_SRC_DIR          "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/arch_min")
 set(BSK_ARCH_UTILITIES_SRC_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/arch_utilities")
 set(BSK_RUNTIME_MIN_SRC_DIR       "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/runtime_min")
@@ -57,8 +58,10 @@ target_compile_features(bsk_sdk_headers INTERFACE cxx_std_17)
 
 target_include_directories(bsk_sdk_headers INTERFACE
   $<BUILD_INTERFACE:${BSK_SDK_INCLUDE_SRC_DIR}>
+  $<BUILD_INTERFACE:${BSK_SDK_C_MSG_INTERFACE_DIR}>
   $<BUILD_INTERFACE:${BSK_SDK_COMPAT_INCLUDE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/cMsgCInterface>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/compat>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/Basilisk>
 )
