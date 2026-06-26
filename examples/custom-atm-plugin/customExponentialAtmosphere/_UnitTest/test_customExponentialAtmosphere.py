@@ -94,6 +94,15 @@ def test_plugin_links_architecture_utilities():
     assert radius == pytest.approx(semi_major_axis, rel=1e-12, abs=0.0)
 
 
+def test_c_message_interface_round_trips():
+    """The bundled C module reads/writes a built-in message through the C
+    interface shipped by bsk-sdk."""
+    position = 6_771_000.0  # [m]
+    assert customExponentialAtmosphere.roundTripPlanetPosition(position) == pytest.approx(
+        position, rel=1e-12, abs=0.0
+    )
+
+
 def test_package_import_exposes_generated_messaging():
     """Package import exposes generated message bindings and recorders."""
     plugin_messaging = _plugin_messaging()

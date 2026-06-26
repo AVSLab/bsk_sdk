@@ -47,6 +47,7 @@ def _required_sync_paths(repo_root: Path) -> list[Path]:
     sdk_src = repo_root / "src" / "bsk_sdk"
     return [
         sdk_src / "include" / "Basilisk",
+        sdk_src / "include" / "cMsgCInterface",
         sdk_src / "arch_min",
         sdk_src / "arch_utilities",
         sdk_src / "runtime_min",

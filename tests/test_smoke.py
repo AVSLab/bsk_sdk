@@ -67,6 +67,14 @@ def test_sdk_source_dirs_exist() -> None:
         assert any((root / d).iterdir()), f"SDK source dir is empty: {d}"
 
 
+def test_builtin_c_msg_interfaces_present() -> None:
+    """Built-in C message wrappers ship pre-generated for C plugin modules."""
+    cmsg = Path(bsk_sdk.c_msg_interface_dir())
+    assert cmsg.is_dir(), f"c_msg_interface_dir() does not exist: {cmsg}"
+    for name in ("SpicePlanetStateMsg_C.h", "SpicePlanetStateMsg_C.cpp"):
+        assert (cmsg / name).exists(), f"Missing built-in C message interface: {name}"
+
+
 def test_msg_autosource_generators_present() -> None:
     autosrc = Path(bsk_sdk.msg_autosource_dir())
     assert autosrc.is_dir(), f"msg_autosource_dir() does not exist: {autosrc}"

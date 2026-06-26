@@ -23,12 +23,19 @@ bsk_add_swig_module(
 ```
 
 `bsk_add_swig_module` automatically compiles the vendored Basilisk SDK sources
-(arch_min, arch_utilities, runtime_min) directly into your plugin, so no
-separate link targets are needed. Basilisk utility headers are available at
-their standard paths, for example:
+(arch_min, arch_utilities, runtime_min, and built-in C message interfaces)
+directly into your plugin, so no separate link targets are needed. Basilisk
+utility headers are available at their standard paths, for example:
 
 ```cpp
 #include "architecture/utilities/orbitalMotion.h"
+```
+
+C modules can include built-in message C interfaces at the same paths used by
+Basilisk modules:
+
+```c
+#include "cMsgCInterface/SpicePlanetStateMsg_C.h"
 ```
 
 If your plugin needs additional link targets, pass them via `LINK_LIBS` and

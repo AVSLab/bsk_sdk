@@ -25,6 +25,7 @@
 
 %{
     #include "customExponentialAtmosphere.h"
+    #include "planetStateProbe.h"
 %}
 
 %pythoncode %{
@@ -62,6 +63,9 @@ struct AtmoPropsMsg_C;
 // Plugin-defined message
 %include "CustomAtmStatusMsgPayload.h"
 struct CustomAtmStatusMsg_C;
+
+// Small C module exercising the SDK-shipped SpicePlanetStateMsg_C interface
+%include "planetStateProbe.h"
 
 %pythoncode %{
 import sys

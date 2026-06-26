@@ -32,8 +32,12 @@ set(PLUGIN_PKG_DIR "${SKBUILD_PLATLIB_DIR}/custom_atm")
 file(GLOB PLUGIN_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/customExponentialAtmosphere/*.cpp"
 )
-# Note: do NOT add SDK sources (arch_min, arch_utilities, runtime_min) here.
+# Note: do NOT add SDK sources (arch_min, arch_utilities, runtime_min, or
+# built-in cMsgCInterface definitions) here.
 # bsk_add_swig_module compiles them automatically into the plugin target.
+list(APPEND PLUGIN_SOURCES
+  "${CMAKE_CURRENT_SOURCE_DIR}/planetStateProbe/planetStateProbe.c"
+)
 
 # Build the SWIG module. The SDK handles Python, SWIG, Eigen, and Basilisk
 # library resolution automatically.
@@ -44,6 +48,7 @@ bsk_add_swig_module(
   INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/customExponentialAtmosphere"
     "${CMAKE_CURRENT_SOURCE_DIR}/messages"
+    "${CMAKE_CURRENT_SOURCE_DIR}/planetStateProbe"
   OUTPUT_DIR "${PLUGIN_PKG_DIR}"
 )
 
