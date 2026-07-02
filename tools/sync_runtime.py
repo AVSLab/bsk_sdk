@@ -39,12 +39,12 @@ from __future__ import annotations
 
 import argparse
 import re
-import shutil
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from _sync_paths import SDK_REPO_ROOT, resolve_basilisk_src_root
+from common import copy_file  # noqa: E402
 
 SDK_RUNTIME_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "runtime_min"
 SDK_INCLUDE_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "include" / "Basilisk"
@@ -58,12 +58,6 @@ SKIP_SUBDIRS: set[str] = {"mujocoDynamics"}
 
 # Matches #include "Header.h"
 INCLUDE_RE = re.compile(r'^\s*#\s*include\s*"([^"]+)"\s*$')
-
-
-def copy_file(src: Path, dst: Path) -> None:
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dst)
-
 
 _SYSTEM_HEADERS: set[str] = {
     "string.h", "stdlib.h", "stdio.h", "math.h", "stdint.h", "stddef.h",
