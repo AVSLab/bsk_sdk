@@ -32,12 +32,12 @@ Only the headers that plugin authors need to compile against are included.
 from __future__ import annotations
 
 import argparse
-import shutil
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from _sync_paths import SDK_REPO_ROOT, resolve_basilisk_src_root
+from common import copy_tree  # noqa: E402
 
 SDK_INCLUDE_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "include" / "Basilisk"
 
@@ -80,21 +80,6 @@ IGNORE_PATTERNS = [
     "*.c",
 ]
 
-
-def copy_tree(src: Path, dest: Path) -> None:
-    """Replace dest with a filtered copy of src."""
-    if dest.exists():
-        shutil.rmtree(dest)
-
-    dest.parent.mkdir(parents=True, exist_ok=True)
-
-    shutil.copytree(
-        src,
-        dest,
-        ignore=shutil.ignore_patterns(*IGNORE_PATTERNS),
-    )
-
-
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Sync Basilisk public headers into bsk-sdk/src/bsk_sdk/include/Basilisk"
@@ -123,7 +108,7 @@ def main() -> None:
             raise FileNotFoundError(f"Missing source directory: {src_dir}")
 
         print(f"[bsk-sdk] Copying {src_dir} -> {dest_dir}")
-        copy_tree(src_dir, dest_dir)
+        copy_tree(src_dir, dest_dir, ignore_patterns=IGNORE_PATTERNS)
 
     print("[bsk-sdk] Header synchronization complete.")
 

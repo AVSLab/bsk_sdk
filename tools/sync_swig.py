@@ -36,24 +36,18 @@ So plugin builds can depend solely on the installed `bsk-sdk` package.
 from __future__ import annotations
 
 import argparse
-import shutil
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from _sync_paths import SDK_REPO_ROOT, resolve_basilisk_root
+from common import copy_file  # noqa: E402
 
 SDK_SWIG_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "swig"
 SDK_MSG_AUTOSOURCE_ROOT = SDK_REPO_ROOT / "tools" / "msgAutoSource"
 
 # msgAutoSource directory in BSK, relative to basilisk root.
 BSK_MSG_AUTOSOURCE = "src/architecture/messaging/msgAutoSource"
-
-
-def copy_file(src: Path, dst: Path) -> None:
-    dst.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(src, dst)
-
 
 def main() -> None:
     ap = argparse.ArgumentParser(
@@ -103,7 +97,7 @@ def main() -> None:
             continue
         dst = SDK_MSG_AUTOSOURCE_ROOT / src_file.name
         print(f"[bsk-sdk] Copying {src_file} -> {dst}")
-        shutil.copy2(src_file, dst)
+        copy_file(src_file, dst)
         msg_copied += 1
 
     print(f"[bsk-sdk] msgAutoSource synchronization complete ({msg_copied} files).")

@@ -31,7 +31,6 @@ modules can use the same include paths without adding message-specific CMake.
 from __future__ import annotations
 
 import argparse
-import shutil
 import sys
 from pathlib import Path
 
@@ -41,17 +40,11 @@ from _sync_paths import (  # noqa: E402
     resolve_basilisk_root,
     resolve_basilisk_src_root,
 )
+from common import reset_dir  # noqa: E402
 
 SDK_C_MSG_INTERFACE_ROOT = (
     SDK_REPO_ROOT / "src" / "bsk_sdk" / "include" / "cMsgCInterface"
 )
-
-
-def reset_dir(path: Path) -> None:
-    if path.exists():
-        shutil.rmtree(path)
-    path.mkdir(parents=True, exist_ok=True)
-
 
 def render_template(template: str, replacements: dict[str, str]) -> str:
     rendered = template
