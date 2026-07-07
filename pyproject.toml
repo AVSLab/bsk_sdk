@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "bsk-sdk"
-version = "2.11.0beta"
+version = "2.11.0"
 description = "Vendored Basilisk SDK headers, runtime, and CMake integration for plugin authors"
 readme = "README.md"
 license = { text = "ISC" }
