@@ -78,6 +78,11 @@ def test_builtin_c_msg_interfaces_present() -> None:
 def test_msg_autosource_generators_present() -> None:
     autosrc = Path(bsk_sdk.msg_autosource_dir())
     assert autosrc.is_dir(), f"msg_autosource_dir() does not exist: {autosrc}"
-    for name in ("generatePayloadMetaJson.py", "generateSWIGModules.py",
-                 "msgInterfacePy.i.in", "cMsgCInterfacePy.i.in"):
+    for name in (
+        "generatePayloadEqualityHeader.py",
+        "generatePayloadMetaJson.py",
+        "generateSWIGModules.py",
+        "msgInterfacePy.i.in",
+        "cMsgCInterfacePy.i.in",
+    ):
         assert (autosrc / name).exists(), f"Missing msgAutoSource file: {name}"
