@@ -107,7 +107,21 @@ macro(_bsk_find_build_deps)
   find_package(SWIG REQUIRED COMPONENTS python)
   include(${SWIG_USE_FILE})
   find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
-  find_package(Eigen3 CONFIG REQUIRED)
+
+  if(NOT TARGET Eigen3::Eigen)
+    find_package(Eigen3 CONFIG QUIET)
+  endif()
+  if(NOT TARGET Eigen3::Eigen)
+    if(DEFINED BSK_SDK_INCLUDE_DIR
+        AND EXISTS "${BSK_SDK_INCLUDE_DIR}/eigen3/Eigen/Core")
+      add_library(Eigen3::Eigen IMPORTED INTERFACE GLOBAL)
+      set_target_properties(Eigen3::Eigen PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${BSK_SDK_INCLUDE_DIR}/eigen3"
+      )
+    else()
+      find_package(Eigen3 CONFIG REQUIRED)
+    endif()
+  endif()
 endmacro()
 
 # Collect SDK implementation sources to compile directly into the plugin.

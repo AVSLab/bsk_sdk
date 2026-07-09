@@ -60,6 +60,7 @@ def _required_sync_files(repo_root: Path) -> list[Path]:
     msg_auto = repo_root / "tools" / "msgAutoSource"
     return [
         repo_root / "src" / "bsk_sdk" / "_bsk_version.txt",
+        msg_auto / "generatePayloadEqualityHeader.py",
         msg_auto / "generatePayloadMetaJson.py",
         msg_auto / "generateSWIGModules.py",
         msg_auto / "msgInterfacePy.i.in",
