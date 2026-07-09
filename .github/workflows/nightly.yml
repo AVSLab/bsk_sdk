@@ -47,7 +47,7 @@ jobs:
           pip install --pre \
             --index-url https://avslab.github.io/basilisk/nightly/ \
             --extra-index-url https://pypi.org/simple/ \
-            bsk
+            "bsk[all]"
 
       - name: Sync and build SDK
         run: |
