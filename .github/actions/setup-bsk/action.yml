@@ -1,6 +1,6 @@
 name: Set up Basilisk
 description: >
-  Clones the Basilisk source tree and installs the BSK Python package,
+  Clones the Basilisk source tree and installs the BSK Python package set,
     beta/alpha  => develop branch clone + nightly wheel index
     rc          => release tag clone + TestPyPI
     release     => release tag clone + PyPI
@@ -15,7 +15,7 @@ inputs:
     description: Clone Basilisk source to external/basilisk (needed for sync_all.py)
     default: "true"
   install-package:
-    description: pip-install the BSK Python package into the current environment
+    description: pip-install the BSK Python package set into the current environment
     default: "true"
 
 runs:
@@ -34,7 +34,7 @@ runs:
         git clone --depth 1 --branch "$REF" \
           https://github.com/AVSLab/basilisk.git external/basilisk
 
-    - name: Install BSK Python package
+    - name: Install BSK Python package set
       if: inputs.install-package == 'true'
       shell: bash
       run: |
@@ -43,12 +43,12 @@ runs:
           pip install --pre \
             --index-url https://avslab.github.io/basilisk/nightly/ \
             --extra-index-url https://pypi.org/simple/ \
-            bsk
+            "bsk[all]"
         elif [[ "$BSK" =~ rc ]]; then
           pip install --pre \
             --index-url https://test.pypi.org/simple/ \
             --extra-index-url https://pypi.org/simple/ \
-            "bsk==${BSK}"
+            "bsk[all]==${BSK}"
         else
-          pip install "bsk==${BSK}"
+          pip install "bsk[all]==${BSK}"
         fi

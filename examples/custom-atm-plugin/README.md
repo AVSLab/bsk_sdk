@@ -23,7 +23,7 @@ custom-atm-plugin/
 ## Building
 
 ```bash
-pip install bsk-sdk bsk
+pip install bsk-sdk "bsk[all]"
 pip install build scikit-build-core
 python -m build --wheel --no-isolation
 ```

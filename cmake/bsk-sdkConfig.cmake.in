@@ -75,7 +75,7 @@ function(_bsk_sdk_check_basilisk_version)
         "  Installed Basilisk is ${_bsk_installed_version}\n\n"
         "Plugins compiled against mismatched headers will have ABI incompatibilities.\n"
         "Either install the matching Basilisk version or re-sync the SDK:\n"
-        "  pip install bsk==${BSK_SDK_BSK_VERSION}\n"
+        "  pip install \"bsk[all]==${BSK_SDK_BSK_VERSION}\"\n"
         "  # or: cd external/basilisk && git checkout v${_bsk_installed_version} && cd ../.. && python3 tools/sync_all.py"
       )
     endif()
