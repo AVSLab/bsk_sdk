@@ -35,7 +35,11 @@ wheel.py-api = "py3"
 wheel.platlib = false
 wheel.install-dir = "bsk_sdk"
 
+sdist.inclusion-mode = "explicit"
 sdist.include = [
+  "pyproject.toml",
+  "build_backend.py",
+  "README.md",
   "CMakeLists.txt",
   "cmake/**",
   "src/bsk_sdk/include/**",
@@ -57,6 +61,8 @@ sdist.exclude = [
   "examples/**",
   "external/**",
   "tests/**",
+  ".DS_Store",
+  "**/.DS_Store",
   "**/__pycache__/**",
   "**/*.pyc",
 ]
