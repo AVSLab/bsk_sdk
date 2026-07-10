@@ -15,7 +15,7 @@ set(BSK_SDK_RUNTIME_MIN_DIR    "${BSK_SDK_PKG_DIR}/runtime_min"     CACHE PATH "
 set(BSK_SDK_SWIG_DIR           "${BSK_SDK_PKG_DIR}/swig"            CACHE PATH "bsk-sdk swig dir")
 set(BSK_SDK_TOOLS_DIR          "${BSK_SDK_PKG_DIR}/tools"           CACHE PATH "bsk-sdk tools dir")
 
-# Provide Eigen3::Eigen from bundled headers so plugins are self-contained.
+# Provide Eigen3::Eigen from bundled headers so extensions are self-contained.
 if(NOT TARGET Eigen3::Eigen)
   add_library(Eigen3::Eigen IMPORTED INTERFACE GLOBAL)
   set_target_properties(Eigen3::Eigen PROPERTIES
@@ -23,7 +23,7 @@ if(NOT TARGET Eigen3::Eigen)
   )
 endif()
 
-# Header-only SDK target — SDK sources are compiled directly into each plugin.
+# Header-only SDK target — SDK sources are compiled directly into each extension.
 if(NOT TARGET bsk::sdk_headers)
   add_library(bsk::sdk_headers IMPORTED INTERFACE GLOBAL)
   set_target_properties(bsk::sdk_headers PROPERTIES
@@ -73,7 +73,7 @@ function(_bsk_sdk_check_basilisk_version)
         "Basilisk version mismatch!\n"
         "  bsk-sdk was synced from Basilisk ${BSK_SDK_BSK_VERSION}\n"
         "  Installed Basilisk is ${_bsk_installed_version}\n\n"
-        "Plugins compiled against mismatched headers will have ABI incompatibilities.\n"
+        "Extensions compiled against mismatched headers will have ABI incompatibilities.\n"
         "Either install the matching Basilisk version or re-sync the SDK:\n"
         "  pip install \"bsk[all]==${BSK_SDK_BSK_VERSION}\"\n"
         "  # or: cd external/basilisk && git checkout v${_bsk_installed_version} && cd ../.. && python3 tools/sync_all.py"

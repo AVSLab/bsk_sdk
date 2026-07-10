@@ -124,7 +124,7 @@ macro(_bsk_find_build_deps)
   endif()
 endmacro()
 
-# Collect SDK implementation sources to compile directly into the plugin.
+# Collect SDK implementation sources to compile directly into the extension.
 # Falls back to the installed Basilisk runtime libs when sources are absent.
 function(_bsk_resolve_sdk_sources out_sources out_link_libs)
   if(DEFINED BSK_SDK_ARCH_MIN_DIR       AND EXISTS "${BSK_SDK_ARCH_MIN_DIR}"
@@ -266,10 +266,10 @@ print(f'{exe_path};{lib_path}', end='')"
   # Validate SWIG runtime version matches Basilisk's.
   file(STRINGS "${_pip_swig_lib}/swigrun.swg" _swigrun_lines
        REGEX "SWIG_RUNTIME_VERSION")
-  set(_plugin_rt "")
+  set(_extension_rt "")
   foreach(_line IN LISTS _swigrun_lines)
     if(_line MATCHES "#define SWIG_RUNTIME_VERSION \"([0-9]+)\"")
-      set(_plugin_rt "${CMAKE_MATCH_1}")
+      set(_extension_rt "${CMAKE_MATCH_1}")
     endif()
   endforeach()
 
@@ -287,14 +287,14 @@ except ImportError:\n\
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-  if(_plugin_rt AND _bsk_rt AND NOT _plugin_rt STREQUAL _bsk_rt)
+  if(_extension_rt AND _bsk_rt AND NOT _extension_rt STREQUAL _bsk_rt)
     message(FATAL_ERROR
       "SWIG runtime version mismatch!\n"
       "  bsk was compiled with SWIG_RUNTIME_VERSION \"${_bsk_rt}\" "
       "(capsule: swig_runtime_data${_bsk_rt})\n"
-      "  pip swig ${_pip_swig_exe} uses SWIG_RUNTIME_VERSION \"${_plugin_rt}\" "
-      "(capsule: swig_runtime_data${_plugin_rt})\n\n"
-      "Plugins compiled with this SWIG version cannot exchange objects with "
+      "  pip swig ${_pip_swig_exe} uses SWIG_RUNTIME_VERSION \"${_extension_rt}\" "
+      "(capsule: swig_runtime_data${_extension_rt})\n\n"
+      "Extensions compiled with this SWIG version cannot exchange objects with "
       "Basilisk across module boundaries.\n"
       "Install a SWIG version whose runtime epoch matches bsk (epoch ${_bsk_rt}):\n"
       "  SWIG runtime epoch 5 -> SWIG 4.4.1    (pip install \"swig==4.4.1\")\n"

@@ -33,8 +33,8 @@ This complements sync_headers.py:
 - sync_sources.py vendors architecture utility sources into:
     sdk/src/bsk_sdk/arch_utilities/...
 
-These files are compiled by the bsk-sdk CMake project so plugin authors do not
-have to compile them in every plugin.
+These files are compiled by the bsk-sdk CMake project so extension authors do not
+have to compile them in every extension.
 """
 
 from __future__ import annotations

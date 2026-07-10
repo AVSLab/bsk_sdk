@@ -26,7 +26,7 @@ Copies selected directories from the main Basilisk `src/` tree into:
 
     sdk/src/bsk_sdk/include/Basilisk/
 
-Only the headers that plugin authors need to compile against are included.
+Only the headers that extension authors need to compile against are included.
 """
 
 from __future__ import annotations

@@ -1,8 +1,8 @@
-# custom-atm-plugin
+# custom-atm-extension
 
-Example Basilisk plugin built entirely out-of-tree using `bsk-sdk`.
+Example Basilisk extension built entirely out-of-tree using `bsk-sdk`.
 
-This plugin implements a simple exponential atmosphere model
+This extension implements a simple exponential atmosphere model
 (`CustomExponentialAtmosphere`) that extends Basilisk's `AtmosphereBase`.
 
 ## Directory structure
@@ -10,10 +10,10 @@ This plugin implements a simple exponential atmosphere model
 The layout follows the standard Basilisk module conventions:
 
 ```
-custom-atm-plugin/
+custom-atm-extension/
   customExponentialAtmosphere/     # Module source, header, SWIG interface
     _UnitTest/                     # Tests (pytest)
-  messages/                        # Plugin-defined message payload headers
+  messages/                        # Extension-defined message payload headers
   planetStateProbe/                # Small C module using built-in BSK messages
   custom_atm/                      # Python package (wheel output)
   CMakeLists.txt                   # Build configuration
@@ -37,8 +37,8 @@ pytest customExponentialAtmosphere/_UnitTest/ -v
 
 ## Custom message recorders
 
-If a plugin defines custom messages with `bsk_generate_messages()`, import the
-generated message package from the plugin's top-level `__init__.py` before
+If an extension defines custom messages with `bsk_generate_messages()`, import the
+generated message package from the extension's top-level `__init__.py` before
 importing module wrappers:
 
 ```python
@@ -60,5 +60,5 @@ same include path as in Basilisk itself:
 ```
 
 The SDK ships and compiles these built-in definitions automatically through
-`bsk_add_swig_module()`, so the plugin `CMakeLists.txt` only lists the module's
+`bsk_add_swig_module()`, so the extension `CMakeLists.txt` only lists the module's
 own C source.

@@ -6,12 +6,12 @@ backend-path = ["."]
 [project]
 name = "bsk-sdk"
 version = "2.11.0"
-description = "Vendored Basilisk SDK headers, runtime, and CMake integration for plugin authors"
+description = "Vendored Basilisk SDK headers, runtime, and CMake integration for extension authors"
 readme = "README.md"
 license = { text = "ISC" }
 requires-python = ">=3.9"
 dependencies = [
-  # Plugin authors compile SWIG extensions against bsk. The pip swig package
+  # Extension authors compile SWIG modules against bsk. The pip swig package
   # provides a self-contained binary on all platforms and is detected
   # automatically by bsk_add_swig_module.cmake via the Python interpreter.
   #
@@ -20,7 +20,7 @@ dependencies = [
   # The cmake check in bsk_add_swig_module enforces the match at build time.
   "swig==4.4.1",
   # Required by generatePayloadMetaJson.py, which parses *Payload.h structs at
-  # plugin build time to produce the JSON metadata consumed by generateSWIGModules.py.
+  # extension build time to produce the JSON metadata consumed by generateSWIGModules.py.
   "libclang>=15.0.6.1,<=18.1.1",
 ]
 
@@ -29,7 +29,7 @@ bsk-sdk = "bsk_sdk"
 
 [tool.scikit-build]
 wheel.packages = ["bsk_sdk"]
-# SDK sources and headers are compiled into each plugin at plugin build time,
+# SDK sources and headers are compiled into each extension at extension build time,
 # so this wheel carries no native artifacts and is genuinely platform-neutral.
 wheel.py-api = "py3"
 wheel.platlib = false

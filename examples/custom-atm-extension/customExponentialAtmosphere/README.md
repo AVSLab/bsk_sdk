@@ -14,7 +14,7 @@ customExponentialAtmosphere/
 The module implements a simple exponential atmosphere model that extends
 Basilisk's `AtmosphereBase`. It demonstrates how to:
 
-- Subclass a Basilisk base class from an out-of-tree plugin
+- Subclass a Basilisk base class from an out-of-tree extension
 - Define and wire custom input messages
 - Use built-in Basilisk C message interfaces from a C module
 - Use `bsk_add_swig_module()` for SWIG wrapping

@@ -24,7 +24,7 @@ Basilisk C modules include generated wrappers as:
 
     #include "cMsgCInterface/SomeMsg_C.h"
 
-The SDK ships these generated headers and definitions so external plugin C
+The SDK ships these generated headers and definitions so external extension C
 modules can use the same include paths without adding message-specific CMake.
 """
 

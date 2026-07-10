@@ -9,5 +9,5 @@ binaries and message bindings here.
 
 The generated `messaging` package must be imported before module wrappers that
 expose custom message fields. That import registers the SWIG proxy classes for
-the plugin's `Message<T>` and `Recorder<T>` specializations, which makes calls
+the extension's `Message<T>` and `Recorder<T>` specializations, which makes calls
 such as `module.customOutMsg.recorder()` work without an extra user import.

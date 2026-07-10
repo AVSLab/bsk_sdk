@@ -1,9 +1,9 @@
 """
-Integration test for the custom-atm-plugin example.
+Integration test for the custom-atm-extension example.
 
 Requires:
   - bsk-sdk installed (provides the CMake helpers and SDK headers)
-  - custom_atm wheel built and installed (see example-plugins/custom-atm-plugin)
+  - custom_atm wheel built and installed (see examples/custom-atm-extension)
   - Basilisk installed (provides SimulationBaseClass, messaging, etc.)
 
 Skip gracefully if either optional dependency is absent so the smoke test
@@ -17,7 +17,7 @@ import math
 import pytest
 
 basilisk = pytest.importorskip("Basilisk", reason="Basilisk not installed")
-custom_atm = pytest.importorskip("custom_atm", reason="custom_atm plugin not installed")
+custom_atm = pytest.importorskip("custom_atm", reason="custom_atm extension not installed")
 
 from Basilisk.architecture import messaging, bskLogging  # noqa: E402
 from Basilisk.utilities import SimulationBaseClass, macros  # noqa: E402
@@ -30,7 +30,7 @@ def _window_density(log) -> float:
     return float(max(vals))
 
 
-def _plugin_messaging():
+def _extension_messaging():
     assert hasattr(custom_atm, "messaging"), (
         "custom_atm.__init__ must import generated messaging before module wrappers"
     )
@@ -39,7 +39,7 @@ def _plugin_messaging():
 
 @pytest.fixture()
 def sim_env():
-    """Set up a minimal Basilisk sim with the custom atmosphere plugin."""
+    """Set up a minimal Basilisk sim with the custom atmosphere extension."""
     sim = SimulationBaseClass.SimBaseClass()
     sim.bskLogger.setLogLevel(bskLogging.BSK_WARNING)
 
@@ -78,13 +78,13 @@ def sim_env():
     return sim, atmosphere, log, dt
 
 
-def test_plugin_instantiates():
+def test_extension_instantiates():
     atm = customExponentialAtmosphere.CustomExponentialAtmosphere()
     assert atm is not None
 
 
-def test_plugin_links_architecture_utilities():
-    """Verify the sample plugin can call a compiled Basilisk architecture utility."""
+def test_extension_links_architecture_utilities():
+    """Verify the sample extension can call a compiled Basilisk architecture utility."""
     atm = customExponentialAtmosphere.CustomExponentialAtmosphere()
     earth_mu = 3.986004418e14  # [m^3/s^2]
     semi_major_axis = 7_000_000.0  # [m]
@@ -105,8 +105,8 @@ def test_c_message_interface_round_trips():
 
 def test_package_import_exposes_generated_messaging():
     """Package import exposes generated message bindings and recorders."""
-    plugin_messaging = _plugin_messaging()
-    msg = plugin_messaging.CustomAtmStatusMsg()
+    extension_messaging = _extension_messaging()
+    msg = extension_messaging.CustomAtmStatusMsg()
     rec = msg.recorder()
 
     assert rec is not None
@@ -134,12 +134,12 @@ def test_density_positive(sim_env):
 def test_status_message_updates_density(sim_env):
     sim, atmosphere, log, dt = sim_env
 
-    plugin_messaging = _plugin_messaging()
-    status_pl = plugin_messaging.CustomAtmStatusMsgPayload()
+    extension_messaging = _extension_messaging()
+    status_pl = extension_messaging.CustomAtmStatusMsgPayload()
     status_pl.density = 2.0
     status_pl.scaleHeight = 8_500.0
     status_pl.modelValid = 1
-    status_msg = plugin_messaging.CustomAtmStatusMsg().write(status_pl)
+    status_msg = extension_messaging.CustomAtmStatusMsg().write(status_pl)
     atmosphere.connectAtmStatus(status_msg)
 
     sim.ConfigureStopTime(dt)
@@ -155,12 +155,12 @@ def test_invalid_status_message_ignored(sim_env):
     sim, atmosphere, log, dt = sim_env
 
     # modelValid=0 — should be ignored, density stays at default baseDensity
-    plugin_messaging = _plugin_messaging()
-    status_pl = plugin_messaging.CustomAtmStatusMsgPayload()
+    extension_messaging = _extension_messaging()
+    status_pl = extension_messaging.CustomAtmStatusMsgPayload()
     status_pl.density = 999.0
     status_pl.scaleHeight = 1.0
     status_pl.modelValid = 0
-    status_msg = plugin_messaging.CustomAtmStatusMsg().write(status_pl)
+    status_msg = extension_messaging.CustomAtmStatusMsg().write(status_pl)
     atmosphere.connectAtmStatus(status_msg)
 
     sim.ConfigureStopTime(dt)

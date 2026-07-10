@@ -132,7 +132,7 @@ jobs:
         run: pytest tests/test_smoke.py -v
 
   examples:
-    name: Build example plugin (${{ matrix.os }}, ${{ matrix.python_label }})
+    name: Build example extension (${{ matrix.os }}, ${{ matrix.python_label }})
     needs: build
     runs-on: ${{ matrix.os }}
     strategy:
@@ -179,23 +179,23 @@ jobs:
         shell: bash
         run: pip show bsk swig | grep -E "^(Name|Version):" && python -c "import bsk_sdk; print('bsk-sdk:', bsk_sdk.__version__, '| synced from BSK:', bsk_sdk.bsk_version())"
 
-      - name: Build example plugin wheel
+      - name: Build example extension wheel
         # --no-isolation so the build inherits the locally installed bsk-sdk wheel,
         # guaranteeing CI always tests the current branch rather than a stale PyPI version.
         shell: bash
         run: |
           pip install build scikit-build-core
-          python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
+          python -m build --wheel --no-isolation -o extension-dist examples/custom-atm-extension
 
       - uses: actions/upload-artifact@v6
         with:
-          name: plugin-wheel-${{ matrix.os }}-py${{ matrix.python }}
-          path: plugin-dist/*.whl
+          name: extension-wheel-${{ matrix.os }}-py${{ matrix.python }}
+          path: extension-dist/*.whl
           retention-days: 7
 
-      - name: Install plugin wheel and test dependencies
+      - name: Install extension wheel and test dependencies
         shell: bash
-        run: pip install plugin-dist/*.whl pytest
+        run: pip install extension-dist/*.whl pytest
 
-      - name: Run example plugin tests
-        run: pytest examples/custom-atm-plugin/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
+      - name: Run example extension tests
+        run: pytest examples/custom-atm-extension/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v

@@ -1,7 +1,7 @@
 # Basilisk SDK (`bsk-sdk`)
 
 A self-contained Python wheel that gives external projects everything they need
-to build [Basilisk](https://github.com/AVSLab/basilisk) compatible SWIG plugins
+to build [Basilisk](https://github.com/AVSLab/basilisk) compatible SWIG extensions
 without vendoring the full simulation codebase.
 
 ## Quick start
@@ -10,21 +10,21 @@ without vendoring the full simulation codebase.
 pip install bsk-sdk
 ```
 
-Then in your plugin's `CMakeLists.txt`:
+Then in your extension's `CMakeLists.txt`:
 
 ```cmake
 find_package(bsk-sdk CONFIG REQUIRED)
 
 bsk_add_swig_module(
-  TARGET myPlugin
-  INTERFACE swig/myPlugin.i
-  SOURCES myPlugin.cpp
+  TARGET myExtension
+  INTERFACE swig/myExtension.i
+  SOURCES myExtension.cpp
 )
 ```
 
 `bsk_add_swig_module` automatically compiles the vendored Basilisk SDK sources
 (arch_min, arch_utilities, runtime_min, and built-in C message interfaces)
-directly into your plugin, so no separate link targets are needed. Basilisk
+directly into your extension, so no separate link targets are needed. Basilisk
 utility headers are available at their standard paths, for example:
 
 ```cpp
@@ -38,10 +38,10 @@ Basilisk modules:
 #include "cMsgCInterface/SpicePlanetStateMsg_C.h"
 ```
 
-If your plugin needs additional link targets, pass them via `LINK_LIBS` and
+If your extension needs additional link targets, pass them via `LINK_LIBS` and
 they will be appended after the SDK defaults.
 
-See [`examples/custom-atm-plugin/`](examples/custom-atm-plugin/) for a
+See [`examples/custom-atm-extension/`](examples/custom-atm-extension/) for a
 complete working example.
 
 ## Syncing from Basilisk
@@ -77,5 +77,5 @@ The `bsk-sdk` package version tracks the Basilisk version it was synced from
 
 At CMake configure time, the SDK checks that the installed Basilisk version
 matches and errors out on a mismatch. This prevents silent ABI
-incompatibilities where plugins are compiled against headers from one Basilisk
+incompatibilities where extensions are compiled against headers from one Basilisk
 version but linked against a different runtime.

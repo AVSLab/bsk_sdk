@@ -1,6 +1,6 @@
 # messages
 
-Plugin-defined message payload headers live here.
+Extension-defined message payload headers live here.
 
 Each header defines a C struct following the Basilisk naming convention
 `<Name>MsgPayload`. At build time, `bsk_generate_messages()` in

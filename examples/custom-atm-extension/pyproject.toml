@@ -3,7 +3,7 @@ requires = ["scikit-build-core>=0.9.3", "numpy>=1.24", "bsk-sdk", "bsk", "swig==
 build-backend = "scikit_build_core.build"
 
 [project]
-name = "bsk-plugin-exponential-atmosphere"
+name = "bsk-extension-exponential-atmosphere"
 version = "0.1.0"
 
 [tool.scikit-build]

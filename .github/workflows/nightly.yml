@@ -61,12 +61,12 @@ jobs:
           pip install pytest
           pytest tests/test_smoke.py -v
 
-      - name: Build and test example plugin
+      - name: Build and test example extension
         run: |
           pip install scikit-build-core
-          python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
-          pip install plugin-dist/*.whl
-          pytest examples/custom-atm-plugin/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
+          python -m build --wheel --no-isolation -o extension-dist examples/custom-atm-extension
+          pip install extension-dist/*.whl
+          pytest examples/custom-atm-extension/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
 
       - name: Notify on failure
         if: failure()
