@@ -68,7 +68,7 @@ def test_sdk_source_dirs_exist() -> None:
 
 
 def test_builtin_c_msg_interfaces_present() -> None:
-    """Built-in C message wrappers ship pre-generated for C plugin modules."""
+    """Built-in C message wrappers ship pre-generated for C extension modules."""
     cmsg = Path(bsk_sdk.c_msg_interface_dir())
     assert cmsg.is_dir(), f"c_msg_interface_dir() does not exist: {cmsg}"
     for name in ("SpicePlanetStateMsg_C.h", "SpicePlanetStateMsg_C.cpp"):

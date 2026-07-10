@@ -26,7 +26,7 @@ from Basilisk.architecture import cSysModel as _cSysModel
 sys.modules.setdefault("cSysModel", _cSysModel)
 
 # Import generated custom message bindings before SWIG module wrappers.  This
-# registers the plugin's Message<T> and Recorder<T> proxy classes so custom
+# registers the extension's Message<T> and Recorder<T> proxy classes so custom
 # message fields exposed by modules have their Python methods, including
 # recorder(), without requiring users to import custom_atm.messaging manually.
 from . import messaging

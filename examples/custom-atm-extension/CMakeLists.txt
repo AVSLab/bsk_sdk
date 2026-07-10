@@ -2,7 +2,7 @@
 # Boilerplate: Copy and Paste this section as is, and modify the section below.
 # =============================================================================
 cmake_minimum_required(VERSION 3.26)
-project(bsk_plugin_exponential_atmosphere LANGUAGES C CXX)
+project(bsk_extension_exponential_atmosphere LANGUAGES C CXX)
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
 
@@ -22,20 +22,20 @@ set(bsk-sdk_DIR "${bsk_sdk_dir}")
 find_package(bsk-sdk CONFIG REQUIRED)
 
 # Where scikit-build-core places wheel outputs
-set(PLUGIN_PKG_DIR "${SKBUILD_PLATLIB_DIR}/custom_atm")
+set(EXTENSION_PKG_DIR "${SKBUILD_PLATLIB_DIR}/custom_atm")
 
 # =============================================================================
-# Plugin-specific configuration
+# Extension-specific configuration
 # =============================================================================
 
-# Gather your plugin sources
-file(GLOB PLUGIN_SOURCES CONFIGURE_DEPENDS
+# Gather your extension sources
+file(GLOB EXTENSION_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/customExponentialAtmosphere/*.cpp"
 )
 # Note: do NOT add SDK sources (arch_min, arch_utilities, runtime_min, or
 # built-in cMsgCInterface definitions) here.
-# bsk_add_swig_module compiles them automatically into the plugin target.
-list(APPEND PLUGIN_SOURCES
+# bsk_add_swig_module compiles them automatically into the extension target.
+list(APPEND EXTENSION_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/planetStateProbe/planetStateProbe.c"
 )
 
@@ -44,17 +44,17 @@ list(APPEND PLUGIN_SOURCES
 bsk_add_swig_module(
   TARGET customExponentialAtmosphere
   INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/customExponentialAtmosphere/customExponentialAtmosphere.i"
-  SOURCES   ${PLUGIN_SOURCES}
+  SOURCES   ${EXTENSION_SOURCES}
   INCLUDE_DIRS
     "${CMAKE_CURRENT_SOURCE_DIR}/customExponentialAtmosphere"
     "${CMAKE_CURRENT_SOURCE_DIR}/messages"
     "${CMAKE_CURRENT_SOURCE_DIR}/planetStateProbe"
-  OUTPUT_DIR "${PLUGIN_PKG_DIR}"
+  OUTPUT_DIR "${EXTENSION_PKG_DIR}"
 )
 
-# Generate Python bindings for plugin-defined messages
+# Generate Python bindings for extension-defined messages
 bsk_generate_messages(
-  OUTPUT_DIR "${PLUGIN_PKG_DIR}/messaging"
+  OUTPUT_DIR "${EXTENSION_PKG_DIR}/messaging"
   MSG_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/messages/CustomAtmStatusMsgPayload.h"
 )

@@ -6,19 +6,19 @@ entire `bsk-sdk` repo.
 ## Repository Purpose
 
 `bsk-sdk` is a Python wheel that lets external projects build
-Basilisk-compatible SWIG plugins without vendoring the full Basilisk source
+Basilisk-compatible SWIG extensions without vendoring the full Basilisk source
 tree. The public contract is the installed wheel layout plus the CMake helpers
-that downstream plugin authors call:
+that downstream extension authors call:
 
 - Python package: `src/bsk_sdk`
 - CMake package: `cmake/bsk-sdkConfig.cmake.in`
-- Plugin helper: `cmake/bsk_add_swig_module.cmake`
+- Extension helper: `cmake/bsk_add_swig_module.cmake`
 - Message helper: `cmake/bsk_generate_messages.cmake`
-- Consumer example: `examples/custom-atm-plugin`
+- Consumer example: `examples/custom-atm-extension`
 - Basilisk source input: `external/basilisk` submodule
 - Sync tooling: `tools/sync_all.py` and sibling `tools/sync_*.py` scripts
 
-Prefer changes that preserve the downstream plugin experience:
+Prefer changes that preserve the downstream extension experience:
 
 ```cmake
 find_package(bsk-sdk CONFIG REQUIRED)
@@ -38,11 +38,11 @@ bsk_generate_messages(...)
 - Keep PRs draft until the relevant build/test commands below have been run or
   the skipped checks are clearly documented.
 - PR descriptions should call out:
-  - The affected surface: packaging, CMake/SWIG, sync tooling, example plugin,
+  - The affected surface: packaging, CMake/SWIG, sync tooling, example extension,
     CI, or docs.
   - The Basilisk version or submodule commit, if it changed.
   - The local verification commands and any skipped checks.
-  - Any downstream compatibility impact for plugin authors.
+  - Any downstream compatibility impact for extension authors.
 
 ## Generated And Vendored Boundaries
 
@@ -94,7 +94,7 @@ python -m pip install dist/*.whl pytest --force-reinstall
 pytest tests/test_smoke.py -v
 ```
 
-Downstream plugin path:
+Downstream extension path:
 
 ```bash
 python -m pip install dist/*.whl --force-reinstall
@@ -103,9 +103,9 @@ subprocess.run([sys.executable, '-m', 'pip', 'install', \
 f'bsk[all]=={bsk_sdk.bsk_version()}'], check=True)"
 python -c "import Basilisk; print(Basilisk.__file__)"
 python -m pip install build scikit-build-core
-python -m build --wheel --no-isolation -o plugin-dist examples/custom-atm-plugin
-python -m pip install plugin-dist/*.whl pytest --force-reinstall
-pytest examples/custom-atm-plugin/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
+python -m build --wheel --no-isolation -o extension-dist examples/custom-atm-extension
+python -m pip install extension-dist/*.whl pytest --force-reinstall
+pytest examples/custom-atm-extension/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
 ```
 
 Sync path:
@@ -118,12 +118,12 @@ Notes:
 
 - A local wheel build may need network access if CMake must fetch Eigen3 and it
   is not already available.
-- The example plugin build intentionally uses `--no-isolation` so it tests the
+- The example extension build intentionally uses `--no-isolation` so it tests the
   just-built SDK wheel instead of accidentally pulling a stale PyPI package.
 - Install the exact `bsk[all]` version reported by `bsk_sdk.bsk_version()` and
-  confirm that `Basilisk` imports before running the example plugin test. The
+  confirm that `Basilisk` imports before running the example extension test. The
   test uses `pytest.importorskip`, so a missing BSK installation can otherwise
-  produce a successful pytest exit without exercising the plugin.
+  produce a successful pytest exit without exercising the extension.
 - CI runs Linux, macOS, and Windows against the minimum and maximum supported
   Python versions. Review local-only changes with that matrix in mind.
 
@@ -140,7 +140,7 @@ Notes:
 - Keep `pyproject.toml`, `CMakeLists.txt`, installed package paths, and smoke
   tests in sync. If a file must ship in the wheel or sdist, update the install
   rules and `tool.scikit-build.sdist.include`/`exclude` as needed.
-- Avoid adding plugin-author requirements that contradict the core promise:
+- Avoid adding extension-author requirements that contradict the core promise:
   SDK sources, runtime-minimal sources, and built-in C message interface sources
   should be handled by `bsk_add_swig_module`, not manually wired by consumers.
 
@@ -171,8 +171,8 @@ contract and the consumer build, not just whether the repository build passes.
   mismatches should warn when that is the intended compatibility policy.
 - Adding or moving installed files requires three-way review: CMake install
   rules, Python path helper APIs, and `tests/test_smoke.py` assertions.
-- Example plugin failures are usually the most realistic signal for downstream
-  users. Treat `examples/custom-atm-plugin` as a compatibility test, not just
+- Example extension failures are usually the most realistic signal for downstream
+  users. Treat `examples/custom-atm-extension` as a compatibility test, not just
   sample code.
 
 ## Review Checklist
@@ -181,11 +181,11 @@ For every PR, answer these before approving:
 
 - Does the wheel still expose the expected package root, include directories,
   CMake config files, SWIG directory, tools directory, and SDK source dirs?
-- If the CMake helpers changed, does the example plugin still build and import
+- If the CMake helpers changed, does the example extension still build and import
   on a clean install?
 - If sync tooling changed, does `python3 tools/sync_all.py` still stamp the BSK
   version and recreate all required artifact directories/files?
-- If dependencies changed, are `pyproject.toml`, CI, example plugin metadata,
+- If dependencies changed, are `pyproject.toml`, CI, example extension metadata,
   and CMake diagnostics consistent?
 - If `external/basilisk` changed, is the submodule pointer intentional and is
   the corresponding version impact documented?

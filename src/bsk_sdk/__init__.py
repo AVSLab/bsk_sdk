@@ -17,21 +17,21 @@
 #
 
 """
-Basilisk SDK (``bsk-sdk``) -- build Basilisk-compatible SWIG plugins out-of-tree.
+Basilisk SDK (``bsk-sdk``) -- build Basilisk-compatible SWIG extensions out-of-tree.
 
 This package ships curated Basilisk headers, minimal runtime sources,
 SWIG interface files, and CMake helpers so that external projects can
-compile and link Basilisk plugins without vendoring the full simulation
+compile and link Basilisk extensions without vendoring the full simulation
 codebase.
 
 Quick start::
 
     pip install bsk-sdk
 
-Then in your plugin's ``CMakeLists.txt``::
+Then in your extension's ``CMakeLists.txt``::
 
     find_package(bsk-sdk CONFIG REQUIRED)
-    bsk_add_swig_module(TARGET myPlugin INTERFACE swig/myPlugin.i ...)
+    bsk_add_swig_module(TARGET myExtension INTERFACE swig/myExtension.i ...)
 
 Convenience functions below expose installed paths for headers, SWIG
 support files, CMake config, and tools.

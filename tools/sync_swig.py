@@ -30,7 +30,7 @@ and also syncs the message auto-source tools from the Basilisk repo into:
 
     sdk/tools/msgAutoSource/
 
-So plugin builds can depend solely on the installed `bsk-sdk` package.
+So extension builds can depend solely on the installed `bsk-sdk` package.
 """
 
 from __future__ import annotations

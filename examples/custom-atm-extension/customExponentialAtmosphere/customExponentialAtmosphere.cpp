@@ -58,7 +58,7 @@ void CustomExponentialAtmosphere::evaluateAtmosphereModel(AtmoPropsMsgPayload* m
     static bool firstCall = true;
     if (firstCall) {
         this->bskLogger.bskLog(BSK_INFORMATION,
-            "ExponentialAtmosphere (plugin): model active; using AtmosphereBase altitude.");
+            "ExponentialAtmosphere (extension): model active; using AtmosphereBase altitude.");
         firstCall = false;
     }
 
@@ -71,7 +71,7 @@ void CustomExponentialAtmosphere::evaluateAtmosphereModel(AtmoPropsMsgPayload* m
             statusApplied = true;
         } else {
             this->bskLogger.bskLog(BSK_WARNING,
-                "ExponentialAtmosphere (plugin): CustomAtmStatusMsgPayload invalid; ignoring.");
+                "ExponentialAtmosphere (extension): CustomAtmStatusMsgPayload invalid; ignoring.");
         }
     }
 
@@ -81,7 +81,7 @@ void CustomExponentialAtmosphere::evaluateAtmosphereModel(AtmoPropsMsgPayload* m
 
     if (statusApplied) {
         this->bskLogger.bskLog(BSK_INFORMATION,
-            "ExponentialAtmosphere (plugin): applied status msg; alt=%.3g m rho=%.3g",
+            "ExponentialAtmosphere (extension): applied status msg; alt=%.3g m rho=%.3g",
             this->orbitAltitude, msg->neutralDensity);
     }
 }

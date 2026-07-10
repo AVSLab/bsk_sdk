@@ -38,7 +38,7 @@ from Basilisk.architecture.swig_common_model import *
 // IMPORTANT: use %import (not %include) for Basilisk base-class modules.
 //
 // %import tells SWIG "these types live in an existing Python module — do not
-// re-wrap them here."  The generated Python class for this plugin will then
+// re-wrap them here."  The generated Python class for this extension will then
 // inherit from Basilisk's cSysModel.SysModel, which is what Basilisk's
 // simulation task manager expects when you call AddModelToTask().
 //
@@ -60,7 +60,7 @@ struct SCStatesMsg_C;
 %include "architecture/msgPayloadDefC/AtmoPropsMsgPayload.h"
 struct AtmoPropsMsg_C;
 
-// Plugin-defined message
+// Extension-defined message
 %include "CustomAtmStatusMsgPayload.h"
 struct CustomAtmStatusMsg_C;
 

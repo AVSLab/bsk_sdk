@@ -24,20 +24,20 @@
 #include "architecture/messaging/messaging.h"   // ReadFunctor / Message
 #include "CustomAtmStatusMsgPayload.h"
 
-/*! @brief exponential atmosphere model (plugin example) */
+/*! @brief exponential atmosphere model (extension example) */
 class CustomExponentialAtmosphere : public AtmosphereBase
 {
 public:
     CustomExponentialAtmosphere();
     ~CustomExponentialAtmosphere();
 
-    // Plugin-defined input message wiring (idiomatic Basilisk pattern)
+    // Extension-defined input message wiring (idiomatic Basilisk pattern)
     void connectAtmStatus(Message<CustomAtmStatusMsgPayload>* msg);
 
     /*! @brief Compute the orbital radius for a circular orbit using Basilisk's orbitalMotion utility.
      *
      * This helper exists to exercise a Basilisk architecture utility from the
-     * plugin example. It proves that plugin modules can include
+     * extension example. It proves that extension modules can include
      * architecture/utilities/orbitalMotion.h and link against the corresponding
      * SDK-provided utility implementation.
      *

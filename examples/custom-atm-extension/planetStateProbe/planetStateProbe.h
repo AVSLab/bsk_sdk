@@ -18,7 +18,7 @@
  */
 
 /*
- * Minimal C module that uses the plugin's built-in planet-state input message
+ * Minimal C module that uses the extension's built-in planet-state input message
  * through the C interface shipped by bsk-sdk.
  */
 #ifndef PLANET_STATE_PROBE_H
