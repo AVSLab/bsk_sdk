@@ -46,12 +46,25 @@ complete working example.
 
 ## Syncing from Basilisk
 
-The SDK vendors a curated subset of Basilisk headers and sources. These are
-synced from a pinned Basilisk commit via a Git submodule.
+The SDK vendors a curated subset of Basilisk headers and sources. By default,
+these are synced from the `external/basilisk` Git submodule. For a fresh clone,
+initialize the submodule once before running the default sync:
 
 ```bash
+# Only needed once in a fresh clone:
 git submodule update --init --recursive
+
 python3 tools/sync_all.py
+pip install -e .
+```
+
+If you already have a local Basilisk checkout, point the sync script at it
+directly instead of moving the submodule checkout:
+
+```bash
+git -C ~/Repos/basilisk fetch --tags
+git -C ~/Repos/basilisk checkout <tag-or-branch>
+python3 tools/sync_all.py --basilisk-root ~/Repos/basilisk
 pip install -e .
 ```
 
@@ -68,6 +81,14 @@ cd external/basilisk
 git fetch && git checkout <tag-or-commit>
 cd ../..
 python3 tools/sync_all.py
+```
+
+Or sync from an existing Basilisk checkout without moving the submodule:
+
+```bash
+git -C ~/Repos/basilisk fetch --tags
+git -C ~/Repos/basilisk checkout <tag-or-commit>
+python3 tools/sync_all.py --basilisk-root ~/Repos/basilisk
 ```
 
 ## Versioning

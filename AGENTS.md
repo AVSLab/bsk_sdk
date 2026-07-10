@@ -61,8 +61,17 @@ directories are ignored by git and should normally be recreated locally:
 Use the sync scripts rather than hand-editing generated Basilisk copies:
 
 ```bash
+# Only needed once in a fresh clone:
 git submodule update --init --recursive
+
 python3 tools/sync_all.py
+```
+
+If you already have a local Basilisk checkout, point the sync scripts at it
+instead of moving the submodule:
+
+```bash
+python3 tools/sync_all.py --basilisk-root ~/Repos/basilisk
 ```
 
 For an intentional Basilisk update:
