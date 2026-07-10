@@ -1,14 +1,14 @@
 name: Set up Basilisk
 description: >
   Clones the Basilisk source tree and installs the BSK Python package set,
-    beta/alpha  => develop branch clone + nightly wheel index
+    beta/alpha/aN/bN => develop branch clone + nightly wheel index
     rc          => release tag clone + TestPyPI
     release     => release tag clone + PyPI
 
 inputs:
   version:
     description: >
-      BSK version string (e.g. 2.11.0beta, 2.10.2rc1, 2.11.0).
+      BSK version string (e.g. 2.12.0b0, 2.10.2rc1, 2.11.0).
       Drives both the git ref to clone and the pip index to install from.
     required: true
   clone-source:
@@ -26,7 +26,7 @@ runs:
       shell: bash
       run: |
         BSK="${{ inputs.version }}"
-        if [[ "$BSK" =~ beta|alpha ]]; then
+        if [[ "$BSK" =~ beta|alpha|[0-9]+(a|b)[0-9]+ ]]; then
           REF=develop
         else
           REF="v${BSK}"
@@ -39,7 +39,7 @@ runs:
       shell: bash
       run: |
         BSK="${{ inputs.version }}"
-        if [[ "$BSK" =~ beta|alpha ]]; then
+        if [[ "$BSK" =~ beta|alpha|[0-9]+(a|b)[0-9]+ ]]; then
           pip install --pre \
             --index-url https://avslab.github.io/basilisk/nightly/ \
             --extra-index-url https://pypi.org/simple/ \
