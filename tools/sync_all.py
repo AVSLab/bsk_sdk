@@ -22,6 +22,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -36,10 +37,34 @@ def run(cmd: list[str], cwd: Path) -> None:
 
 
 BSK_VERSION_FILE = "docs/source/bskVersion.txt"
+PROJECT_VERSION_RE = re.compile(r"^(\s*)version\s*=.*?(\r?\n?)$")
+
+
+def update_pyproject_version(pyproject_path: Path, version: str) -> None:
+    """Set ``[project].version`` in pyproject.toml to the synced BSK version."""
+    lines = pyproject_path.read_text().splitlines(keepends=True)
+    in_project = False
+
+    for index, line in enumerate(lines):
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_project = stripped == "[project]"
+            continue
+
+        if in_project:
+            match = PROJECT_VERSION_RE.match(line)
+            if match:
+                indent, newline = match.groups()
+                lines[index] = f'{indent}version = "{version}"{newline}'
+                pyproject_path.write_text("".join(lines))
+                print(f"[bsk-sdk] Updated package version: {version} -> {pyproject_path}")
+                return
+
+    raise RuntimeError(f"Could not find [project].version in {pyproject_path}")
 
 
 def stamp_bsk_version(bsk_root: Path, repo_root: Path) -> None:
-    """Read bskVersion.txt from Basilisk and write it into the SDK package."""
+    """Read bskVersion.txt from Basilisk and write it into SDK metadata."""
     version_file = bsk_root / BSK_VERSION_FILE
     if not version_file.exists():
         raise FileNotFoundError(
@@ -50,6 +75,7 @@ def stamp_bsk_version(bsk_root: Path, repo_root: Path) -> None:
     dst = repo_root / "src" / "bsk_sdk" / "_bsk_version.txt"
     dst.write_text(bsk_version + "\n")
     print(f"\n[bsk-sdk] Stamped BSK version: {bsk_version} -> {dst}")
+    update_pyproject_version(repo_root / "pyproject.toml", bsk_version)
 
 
 def sync_basilisk_submodule(repo_root: Path) -> None:
