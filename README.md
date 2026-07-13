@@ -73,6 +73,40 @@ for the `UpdateStateImpl` naming rules and nopython-mode constraints. The
 [`scenarioNumbaAtmosphereExtension.py`](examples/scenarioNumbaAtmosphereExtension.py)
 is an executable example using the installed extension wheel.
 
+## Building and testing
+
+In a fresh clone, generate the ignored SDK artifacts before disabling automatic
+sync. Then build and install the SDK wheel and run every SDK test under `tests`:
+
+```bash
+python -m pip install build pytest
+python3 tools/sync_all.py --sync-submodules
+BSK_SDK_AUTO_SYNC=0 python -m build --wheel -o dist
+python -m pip install --force-reinstall dist/*.whl
+python -m pytest tests -v
+```
+
+To test the examples, first install the Basilisk version reported by
+`bsk_sdk.bsk_version()`. Then build and install the example extension wheel and
+run every test collected under `examples`:
+
+```bash
+python -m pip install build scikit-build-core pytest
+# For a published SDK/BSK release:
+python -c "import bsk_sdk, subprocess, sys; subprocess.run([sys.executable, '-m', 'pip', 'install', f'bsk[all]=={bsk_sdk.bsk_version()}'], check=True)"
+# For an alpha or beta SDK whose BSK wheel is on the nightly index instead:
+python -m pip install --pre --index-url https://avslab.github.io/basilisk/nightly/ --extra-index-url https://pypi.org/simple/ "bsk[all]"
+python -c "import Basilisk, bsk_sdk; print('Basilisk:', Basilisk.__version__); print('SDK synced from:', bsk_sdk.bsk_version())"
+python -m build --wheel --no-isolation -o extension-dist examples/custom-atm-extension
+python -m pip install extension-dist/*.whl
+python -c "import Basilisk, numba, custom_atm; from custom_atm import numbaAtmosphere"
+python -m pytest examples -v
+```
+
+The explicit `tests` and `examples` paths avoid collecting tests from the
+`external/basilisk` submodule while automatically including new SDK and
+example tests added under those directories.
+
 ## Syncing from Basilisk
 
 The SDK vendors a curated subset of Basilisk headers and sources. By default,

@@ -113,7 +113,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          sparse-checkout: tests
+          sparse-checkout: |
+            tests
+            tools
 
       - uses: actions/setup-python@v6
         with:
@@ -128,8 +130,8 @@ jobs:
         shell: bash
         run: pip install dist/*.whl pytest
 
-      - name: Run smoke tests
-        run: pytest tests/test_smoke.py -v
+      - name: Run SDK tests
+        run: pytest tests -v
 
   examples:
     name: Build example extension (${{ matrix.os }}, ${{ matrix.python_label }})
@@ -199,5 +201,5 @@ jobs:
           pip install extension-dist/*.whl pytest
           python -c "import Basilisk, numba, custom_atm; from custom_atm import numbaAtmosphere"
 
-      - name: Run example extension tests
-        run: pytest examples/custom-atm-extension -v
+      - name: Run example tests
+        run: pytest examples -v

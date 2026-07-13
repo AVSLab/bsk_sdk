@@ -24,17 +24,27 @@ custom-atm-extension/
 
 ## Building
 
+Run the following commands from the root of the `bsk-sdk` repository. Running
+the import checks from this example directory would put the unbuilt
+`custom_atm` source package ahead of the installed wheel on Python's import
+path.
+
 ```bash
-pip install bsk-sdk "bsk[all]"
-pip install build scikit-build-core
-python -m build --wheel --no-isolation
+python -m pip install bsk-sdk build scikit-build-core
+# For a published SDK/BSK release:
+python -c "import bsk_sdk, subprocess, sys; subprocess.run([sys.executable, '-m', 'pip', 'install', f'bsk[all]=={bsk_sdk.bsk_version()}'], check=True)"
+# For an alpha or beta SDK whose BSK wheel is on the nightly index instead:
+python -m pip install --pre --index-url https://avslab.github.io/basilisk/nightly/ --extra-index-url https://pypi.org/simple/ "bsk[all]"
+python -c "import Basilisk, bsk_sdk; print('Basilisk:', Basilisk.__version__); print('SDK synced from:', bsk_sdk.bsk_version())"
+python -m build --wheel --no-isolation -o extension-dist examples/custom-atm-extension
 ```
 
 ## Testing
 
 ```bash
-pip install dist/*.whl pytest
-pytest customExponentialAtmosphere/_UnitTest/ -v
+python -m pip install extension-dist/*.whl pytest
+python -c "import Basilisk, numba, custom_atm; from custom_atm import numbaAtmosphere"
+python -m pytest examples -v
 ```
 
 ## Numba module

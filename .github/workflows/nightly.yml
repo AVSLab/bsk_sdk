@@ -56,10 +56,10 @@ jobs:
           python -m build --wheel -o dist
           pip install dist/*.whl
 
-      - name: Run smoke tests
+      - name: Run SDK tests
         run: |
           pip install pytest
-          pytest tests/test_smoke.py -v
+          pytest tests -v
 
       - name: Build and test example extension
         run: |
@@ -67,7 +67,7 @@ jobs:
           python -m build --wheel --no-isolation -o extension-dist examples/custom-atm-extension
           pip install extension-dist/*.whl
           python -c "import Basilisk, numba, custom_atm; from custom_atm import numbaAtmosphere"
-          pytest examples/custom-atm-extension -v
+          pytest examples -v
 
       - name: Notify on failure
         if: failure()
