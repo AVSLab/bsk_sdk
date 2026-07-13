@@ -28,6 +28,13 @@ set(EXTENSION_PKG_DIR "${SKBUILD_PLATLIB_DIR}/custom_atm")
 # Extension-specific configuration
 # =============================================================================
 
+# Install a pure-Python Basilisk module into the same package as the compiled
+# modules. Numba modules need no native build step of their own.
+bsk_add_python_module(
+  SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/numbaAtmosphere/numbaAtmosphere.py"
+  OUTPUT_DIR "${EXTENSION_PKG_DIR}"
+)
+
 # Gather your extension sources
 file(GLOB EXTENSION_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/customExponentialAtmosphere/*.cpp"
