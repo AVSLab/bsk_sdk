@@ -195,7 +195,9 @@ jobs:
 
       - name: Install extension wheel and test dependencies
         shell: bash
-        run: pip install extension-dist/*.whl pytest
+        run: |
+          pip install extension-dist/*.whl pytest
+          python -c "import Basilisk, numba, custom_atm; from custom_atm import numbaAtmosphere"
 
       - name: Run example extension tests
-        run: pytest examples/custom-atm-extension/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
+        run: pytest examples/custom-atm-extension -v

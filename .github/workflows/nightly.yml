@@ -66,7 +66,8 @@ jobs:
           pip install scikit-build-core
           python -m build --wheel --no-isolation -o extension-dist examples/custom-atm-extension
           pip install extension-dist/*.whl
-          pytest examples/custom-atm-extension/customExponentialAtmosphere/_UnitTest/test_customExponentialAtmosphere.py -v
+          python -c "import Basilisk, numba, custom_atm; from custom_atm import numbaAtmosphere"
+          pytest examples/custom-atm-extension -v
 
       - name: Notify on failure
         if: failure()
