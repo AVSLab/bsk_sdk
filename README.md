@@ -44,6 +44,35 @@ they will be appended after the SDK defaults.
 See [`examples/custom-atm-extension/`](examples/custom-atm-extension/) for a
 complete working example.
 
+## Pure-Python and Numba modules
+
+Basilisk 2.11 introduced `NumbaModel` for Python modules whose update method is
+JIT-compiled and called directly by the C++ scheduler. Extension projects can
+keep these modules in the same conventional source layout as compiled modules
+and copy them into the wheel package with `bsk_add_python_module`:
+
+```cmake
+bsk_add_python_module(
+  SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/numbaAtmosphere/numbaAtmosphere.py"
+  OUTPUT_DIR "${SKBUILD_PLATLIB_DIR}/my_extension"
+)
+```
+
+The module subclasses `Basilisk.architecture.numbaModel.NumbaModel`; it does
+not need a SWIG interface or native build target. Add both `bsk` and `numba` to
+the extension's runtime dependencies rather than adding Numba to `bsk-sdk`,
+since extensions that only build C or C++ modules do not need it.
+
+When `bsk_generate_messages()` creates extension-owned message bindings, their
+payload dtypes are registered for `NumbaModel` automatically. Import the
+generated messaging package before the Numba module; a duplicate payload name
+raises an import error instead of replacing an existing Basilisk dtype.
+
+See the [Basilisk Numba module guide](https://avslab.github.io/basilisk/Learn/makingModules/numbaModules.html)
+for the `UpdateStateImpl` naming rules and nopython-mode constraints. The
+[`scenarioNumbaAtmosphereExtension.py`](examples/scenarioNumbaAtmosphereExtension.py)
+is an executable example using the installed extension wheel.
+
 ## Syncing from Basilisk
 
 The SDK vendors a curated subset of Basilisk headers and sources. By default,
