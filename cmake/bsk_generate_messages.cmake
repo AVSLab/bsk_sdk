@@ -267,19 +267,36 @@ function(bsk_generate_messages)
 
   # Generate __init__.py that re-exports all message payloads. Importing this
   # package also registers the SWIG proxy classes for the generated Message<T>
-  # and Recorder<T> specializations, so extension package __init__.py files should
-  # import their generated messaging package before importing module wrappers.
+  # and Recorder<T> specializations, plus payload dtypes used by NumbaModel.
+  # Extension package __init__.py files should therefore import their generated
+  # messaging package before importing module wrappers.
   file(MAKE_DIRECTORY "${BSK_OUTPUT_DIR}")
   set(_init_file "${BSK_OUTPUT_DIR}/__init__.py")
   file(WRITE "${_init_file}"
     "\"\"\"Generated Basilisk message bindings for this extension.\n\n"
     "Importing this package registers custom Message<T> and Recorder<T> SWIG\n"
-    "proxy classes, including the recorder() methods on custom messages.\n"
+    "proxy classes, including recorder() methods and NumbaModel payload dtypes.\n"
     "\"\"\"\n\n"
+    "from Basilisk.architecture import messaging as _bsk_messaging\n\n\n"
+    "def _register_numba_payload(payload_class):\n"
+    "    \"\"\"Expose an extension payload dtype to Basilisk NumbaModel.\"\"\"\n"
+    "    payload_name = payload_class.__name__\n"
+    "    existing = getattr(_bsk_messaging, payload_name, None)\n"
+    "    if existing is not None and existing is not payload_class:\n"
+    "        raise ImportError(\n"
+    "            f\"Cannot register extension payload {payload_name!r} for NumbaModel: \"\n"
+    "            \"Basilisk.architecture.messaging already exposes a different \"\n"
+    "            \"payload class with that name. Rename the extension payload to \"\n"
+    "            \"avoid ambiguous dtype resolution.\"\n"
+    "        )\n"
+    "    setattr(_bsk_messaging, payload_name, payload_class)\n\n"
   )
   foreach(_hdr IN LISTS BSK_MSG_HEADERS)
     get_filename_component(_payload_name "${_hdr}" NAME_WE)
-    file(APPEND "${_init_file}" "from .${_payload_name} import *\n")
+    file(APPEND "${_init_file}"
+      "from .${_payload_name} import *\n"
+      "_register_numba_payload(${_payload_name})\n"
+    )
   endforeach()
 
   if(BSK_OUT_VAR)
