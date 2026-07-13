@@ -31,5 +31,6 @@ sys.modules.setdefault("cSysModel", _cSysModel)
 # recorder(), without requiring users to import custom_atm.messaging manually.
 from . import messaging
 from . import customExponentialAtmosphere
+from . import numbaAtmosphere
 
-__all__ = ["customExponentialAtmosphere", "messaging"]
+__all__ = ["customExponentialAtmosphere", "messaging", "numbaAtmosphere"]
