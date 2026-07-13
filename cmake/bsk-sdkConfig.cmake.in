@@ -85,6 +85,7 @@ endfunction()
 _bsk_sdk_check_basilisk_version()
 
 include("${_bsk_sdk_config_dir}/bsk_add_swig_module.cmake")
+include("${_bsk_sdk_config_dir}/bsk_add_python_module.cmake")
 include("${_bsk_sdk_config_dir}/bsk_generate_messages.cmake")
 
 check_required_components(bsk-sdk)
