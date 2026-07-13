@@ -30,6 +30,7 @@ set(EXTENSION_PKG_DIR "${SKBUILD_PLATLIB_DIR}/custom_atm")
 
 # Install a pure-Python Basilisk module into the same package as the compiled
 # modules. Numba modules need no native build step of their own.
+# Guide: https://avslab.github.io/basilisk/Learn/makingModules/numbaModules.html
 bsk_add_python_module(
   SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/numbaAtmosphere/numbaAtmosphere.py"
   OUTPUT_DIR "${EXTENSION_PKG_DIR}"
