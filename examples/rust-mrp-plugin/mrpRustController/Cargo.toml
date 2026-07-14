@@ -1,0 +1,19 @@
+[package]
+name    = "mrp-rust-controller"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+# Produce a C-compatible static archive that the SWIG module links against.
+crate-type = ["staticlib"]
+
+[dependencies]
+bsk-messages = { path = "../../../rust/bsk_messages" }
+# `bsk_module!()` (used in src/lib.rs below) lives in bsk-build alongside the
+# `build.rs` codegen that generates what it includes — see its docs. This
+# entry pulls in only the macro the `codegen` feature
+# enabling those is only turned on for the `[build-dependencies]` entry below.
+bsk-build = { path = "../../../rust/bsk_build", default-features = false }
+
+[build-dependencies]
+bsk-build = { path = "../../../rust/bsk_build" }
