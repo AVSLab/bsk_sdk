@@ -1,2 +1,6 @@
 _build
 target/
+# Not committed: this is a library crate (staticlib), and its bsk-build/
+# bsk-messages/bsk-utilities git dependencies would make a committed lock
+# file go stale every time Basilisk cuts a release.
+Cargo.lock

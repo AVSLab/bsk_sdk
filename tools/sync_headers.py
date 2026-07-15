@@ -27,17 +27,17 @@ Copies selected directories from the main Basilisk `src/` tree into:
     sdk/src/bsk_sdk/include/Basilisk/
 
 Only the headers that extension authors need to compile against are included.
-
-After syncing, this script also regenerates the pre-built Rust message and
-utility bindings.  That step requires ``bindgen`` on ``$PATH``
-(``cargo install bindgen-cli``) and ``libclang-dev``.  Pass ``--skip-rust``
-to omit it if those tools are unavailable.
+Rust plugins use this same header tree for a custom message type's own
+C-interface header (via ``build.rs``/``bindgen``); the built-in
+``bsk-build``/``bsk-messages``/``bsk-utilities`` crates come from the
+Basilisk repository directly instead (see ``sync_rust.py``, which only
+copies the Rust module CMake macro, and "Writing a Rust Plugin" in the
+Basilisk docs).
 """
 
 from __future__ import annotations
 
 import argparse
-import subprocess
 import sys
 from pathlib import Path
 
@@ -86,26 +86,6 @@ IGNORE_PATTERNS = [
     "*.c",
 ]
 
-def _regen_rust_bindings(sdk_root: Path) -> None:
-    """Regenerate the committed Rust message and C-utility bindings."""
-    inc_root = sdk_root / "src" / "bsk_sdk" / "include"
-    for script_name, output_path in (
-        ("gen_rust_messages.py", "rust/bsk_messages/src/lib.rs"),
-        ("gen_rust_utilities.py", "rust/bsk_utilities/src/raw.rs"),
-    ):
-        script = sdk_root / "tools" / script_name
-        result = subprocess.run(
-            [sys.executable, str(script), "--bsk-include", str(inc_root)],
-            cwd=sdk_root,
-        )
-        if result.returncode != 0:
-            print(
-                f"[bsk-sdk] WARNING: Rust binding regeneration failed for "
-                f"{output_path}. Run `python3 tools/{script_name}` manually.",
-                file=sys.stderr,
-            )
-
-
 def main() -> None:
     ap = argparse.ArgumentParser(
         description="Sync Basilisk public headers into bsk-sdk/src/bsk_sdk/include/Basilisk"
@@ -114,12 +94,6 @@ def main() -> None:
         "--basilisk-root",
         default=None,
         help="Path to Basilisk repository root (or set BSK_BASILISK_ROOT).",
-    )
-    ap.add_argument(
-        "--skip-rust",
-        action="store_true",
-        help="Skip regenerating Rust message and utility bindings "
-             "(use when bindgen / libclang-dev are not available).",
     )
     args = ap.parse_args()
 
@@ -143,10 +117,6 @@ def main() -> None:
         copy_tree(src_dir, dest_dir, ignore_patterns=IGNORE_PATTERNS)
 
     print("[bsk-sdk] Header synchronization complete.")
-
-    if not args.skip_rust:
-        print("[bsk-sdk] Regenerating Rust bindings …")
-        _regen_rust_bindings(SDK_REPO_ROOT)
 
 
 if __name__ == "__main__":

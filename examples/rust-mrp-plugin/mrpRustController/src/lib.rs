@@ -22,7 +22,7 @@
 //!
 //! * ``mrpRustController.h`` — C header for CMake/SWIG, generated in the build
 //!   tree.
-//! * ``bsk_shim.rs`` — ``SelfInit`` / ``Reset`` / ``Update`` entry points that
+//! * ``bsk_shim.rs`` — ``Init`` / ``Reset`` / ``Update`` entry points that
 //!   handle all message I/O and call the functions below.
 //!
 //! # Testing without Basilisk
@@ -43,7 +43,7 @@ use bsk_messages::*;
 //
 // bsk-build (build.rs) uses syn to parse this struct's AST and generates:
 //   • mrpRustController.h  — C typedef for CMake/SWIG in the build tree
-//   • bsk_shim.rs          — SelfInit/Reset/Update extern "C" entry points
+//   • bsk_shim.rs          — Init/Reset/Update extern "C" entry points
 //
 // Use `///` doc comments; they are visible to syn and become Doxygen
 // /*!< … */ comments in the generated C header.
@@ -104,13 +104,14 @@ impl BskModule for mrpRustControllerConfig {
     // gain isn't fatal (unlike an unconnected required input, which
     // `bsk-build` already raises `BasiliskError` for automatically), so
     // `warning` — not `bsk_error` — is the appropriate level here.
-    fn reset(&mut self, _current_sim_nanos: u64) {
+    fn reset(&mut self, _current_sim_nanos: u64) -> Self::Outputs {
         if self.K <= 0.0 || self.P <= 0.0 {
             self.bskLogger.warning(&format!(
                 "mrpRustController: non-positive gain (K={}, P={}) will not stabilize the spacecraft",
                 self.K, self.P,
             ));
         }
+        (CmdTorqueBodyMsg::default(),)
     }
 
     fn update(&mut self, inputs: Self::Inputs, _current_sim_nanos: u64) -> Self::Outputs {

@@ -31,9 +31,9 @@ implements the bare proportional-derivative law below — none of
 :ref:`mrpFeedback`'s extra knobs (integral gain, feed-forward torque, the
 C-vs-C++ message demo) are reproduced. Exercising those isn't the point:
 the point is the wiring pattern for swapping in a Rust module.
-``mrpRustController``'s ``SelfInit`` / ``Update`` / ``Reset`` lifecycle
-functions are implemented in Rust and compiled to a static library that is
-linked into the SWIG-generated Python extension.
+``mrpRustController``'s ``Reset`` / ``Update`` lifecycle functions are
+implemented in Rust and compiled to a static library that is linked into
+the SWIG-generated Python extension.
 
 For the full set of features the Rust module system supports (multiple
 message ports, optional inputs, stateful modules, etc.), see the Basilisk

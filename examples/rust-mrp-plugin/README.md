@@ -1,8 +1,8 @@
 # rust-mrp-plugin
 
 A Basilisk attitude controller implemented in Rust, demonstrating how to write
-an out-of-tree BSK module using the `bsk-sdk`.  The Rust module replaces the
-built-in C++ `mrpFeedback` module with a PD controller:
+a BSK module using the `bsk-sdk`.  The Rust module replaces the built-in
+C++ `mrpFeedback` module with a PD controller:
 
 ```
 τ = −K σ_BR − P ω_BR
@@ -71,19 +71,40 @@ BSK_SDK_AUTO_SYNC=0 python -m pip install -e $HOME/bsk_sdk \
 The editable Basilisk installation uses the native modules already built in
 `$HOME/basilisk/dist3`. Build them there first if they are absent.
 
-### 4 — Generate Rust bindings (once, or after a Basilisk header sync)
+### 4 — Copy the Rust module CMake macro from Basilisk (once, or after a sync)
 
 ```bash
-cargo install bindgen-cli          # one-time
-python3 $HOME/bsk_sdk/tools/gen_rust_messages.py \
-    --bsk-include $HOME/bsk_sdk/src/bsk_sdk/include
-python3 $HOME/bsk_sdk/tools/gen_rust_utilities.py \
-    --bsk-include $HOME/bsk_sdk/src/bsk_sdk/include
+cd $HOME/bsk_sdk
+python3 tools/sync_rust.py --basilisk-root $HOME/basilisk
 ```
 
-The second command generates `bsk-utilities`: thin Rust wrappers around the
-Basilisk C ABI utilities and constants.  It deliberately excludes C++/Eigen
-interfaces.
+This copies the `bsk_add_rust_module_sources` CMake macro. The Rust crates
+(`bsk-build`, `bsk-messages`, `bsk-utilities`) aren't vendored into bsk-sdk —
+`mrpRustController/Cargo.toml` depends on them directly from
+`https://github.com/AVSLab/basilisk` (Basilisk's `develop` branch) via
+Cargo's `git` support (see its comments).
+
+**Rust module support hasn't landed in Basilisk yet**, so that dependency
+won't resolve out of the box until it does — and, unlike a normal stale
+dependency, this can't be worked around with a `[patch]`/`[source]`
+override: both require the *original* source to resolve at least once
+(have a matching `Cargo.toml` somewhere in it) before they'll redirect it,
+and `https://github.com/AVSLab/basilisk`'s default branch has none yet.
+
+Until that Basilisk PR merges, temporarily point the three `git = "..."`
+entries in `mrpRustController/Cargo.toml` directly at the in-progress
+branch instead (don't commit this edit):
+
+```toml
+bsk-messages = { git = "https://github.com/careweather/basilisk", branch = "feature/bsk-1482-rust-extensions" }
+bsk-build    = { git = "https://github.com/careweather/basilisk", branch = "feature/bsk-1482-rust-extensions" }
+# ...
+bsk-build = { git = "https://github.com/careweather/basilisk", branch = "feature/bsk-1482-rust-extensions", features = ["codegen"] }
+```
+
+or, against a local checkout with those changes, use a `path` dependency
+instead of `git` (see "Writing a Rust Plugin" in the Basilisk docs for why
+`git`/`path` can't be combined in one entry).
 
 ---
 
@@ -182,8 +203,8 @@ extension. It requires a compatible Basilisk installation at runtime.
 ### Test the installed wheel externally
 
 Run the source test suite from a temporary directory so Python cannot import
-the in-tree package. This verifies the package imported by the tests is the
-wheel installed in the active environment.
+the local checkout's package instead. This verifies the package imported by
+the tests is the wheel installed in the active environment.
 
 ```bash
 cd $HOME/bsk_sdk/examples/rust-mrp-plugin
@@ -234,8 +255,9 @@ modules, the `BskModuleRuntime` mirror, etc.). Quick summary:
 2. **Edit `src/lib.rs`** — define your config struct with `#[repr(C)]`,
    including a mandatory `pub runtime: BskModuleRuntime` field (mirrors
    `SysModel`'s `moduleID`/`ModelTag`/`CallCounts`/`RNGSeed`; `build.rs` panics
-   if it's missing), and implement `self_init`, `reset`, and `update`.  Use
-   `///` doc comments on fields; they become Doxygen comments in the
+   if it's missing), and implement `reset` and `update` (and `init`, if the
+   module needs non-zero parameter defaults before Python configures it).
+   Use `///` doc comments on fields; they become Doxygen comments in the
    generated C header.
 
 3. **Add to `CMakeLists.txt`**:
@@ -268,7 +290,23 @@ modules, the `BskModuleRuntime` mirror, etc.). Quick summary:
 ## Known limitations / experimental status
 
 - Rust module support is **experimental**.  APIs may change.
-- `bsk-messages` and `bsk-utilities` must be regenerated after Basilisk header
-  syncs. `sync_headers.py` does this automatically when `bindgen` is available.
+- **Rust module support hasn't landed in Basilisk yet** (BSK-1482; the
+  corresponding Basilisk PR is still open — see this PR's description for a
+  link). Until it merges, `mrpRustController`'s dependency on
+  `https://github.com/AVSLab/basilisk` won't resolve on its own — see the
+  `[patch]` override in step 4 above. This PR is a draft for the same
+  reason and will come out of draft once that PR merges (dropping the need
+  for the override, and rebasing on whatever CI changes that adds).
 - Custom message types require a hand-written `*_C.h` C interface header.
-- See `bsk-build` (`rust/bsk_build/`) for the shared code-generation logic.
+- `bsk-build`, `bsk-messages`, and `bsk-utilities` aren't published to
+  crates.io yet, so `mrpRustController/Cargo.toml` depends on them via a
+  Cargo `git` dependency on the Basilisk repository instead (see its
+  comments) — this means a full clone of Basilisk on first build (cached by
+  Cargo afterward, not repeated per build). This is a stopgap: once Rust
+  module support is out of experimental status, these crates are expected to
+  be published to crates.io instead.
+- The `bsk_add_rust_module_sources` CMake macro
+  (`cmake/bskAddRustModuleSources.cmake`) is copied from the Basilisk
+  repository (`src/cmake/bskAddRustModuleSources.cmake` there) by
+  `tools/sync_rust.py` — edit the Basilisk copy, not this one. Re-run that
+  script after a Basilisk sync to pick up macro changes.

@@ -203,3 +203,41 @@ jobs:
 
       - name: Run example tests
         run: pytest examples -v
+
+  rust-example:
+    name: Rust example unit tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: |
+            examples/rust-mrp-plugin
+
+      # `cargo test` here is pure Rust -- no Basilisk build/install needed
+      # (see examples/rust-mrp-plugin/README.md, "Running the Rust unit
+      # tests"). Rust is preinstalled on GitHub-hosted runners.
+      #
+      # TODO(BSK-1482): mrpRustController/Cargo.toml's bsk-build/bsk-messages
+      # dependency points at Basilisk's default branch, which doesn't have
+      # Rust module support yet. Cargo's [patch]/[source] replacement can't
+      # route around that (both require the *original* source to resolve at
+      # least once first), so this rewrites the dependency in place to the
+      # in-progress branch instead. Delete this whole step once that
+      # Basilisk PR merges; the committed dependency will resolve on its own.
+      - name: Point bsk-build/bsk-messages at the in-progress Basilisk branch
+        shell: bash
+        run: |
+          sed -i.bak \
+            -e 's#"https://github.com/AVSLab/basilisk"#"https://github.com/careweather/basilisk", branch = "feature/bsk-1482-rust-extensions"#g' \
+            examples/rust-mrp-plugin/mrpRustController/Cargo.toml
+          rm examples/rust-mrp-plugin/mrpRustController/Cargo.toml.bak
+          cat examples/rust-mrp-plugin/mrpRustController/Cargo.toml
+
+      - name: cargo test
+        working-directory: examples/rust-mrp-plugin/mrpRustController
+        run: cargo test
