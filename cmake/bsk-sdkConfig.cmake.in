@@ -23,7 +23,7 @@ if(NOT TARGET Eigen3::Eigen)
   )
 endif()
 
-# Header-only SDK target — SDK sources are compiled directly into each extension.
+# Header-only SDK target used by the shared vendored runtime and its consumers.
 if(NOT TARGET bsk::sdk_headers)
   add_library(bsk::sdk_headers IMPORTED INTERFACE GLOBAL)
   set_target_properties(bsk::sdk_headers PROPERTIES
