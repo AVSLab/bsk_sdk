@@ -124,35 +124,44 @@ macro(_bsk_find_build_deps)
   endif()
 endmacro()
 
-# Collect SDK implementation sources to compile directly into the extension.
+# Resolve the shared SDK runtime target used by every extension and generated
+# message module.
 # Falls back to the installed Basilisk runtime libs when sources are absent.
-function(_bsk_resolve_sdk_sources out_sources out_link_libs)
+function(_bsk_resolve_sdk_sources out_link_libs)
   if(DEFINED BSK_SDK_ARCH_MIN_DIR       AND EXISTS "${BSK_SDK_ARCH_MIN_DIR}"
      AND DEFINED BSK_SDK_ARCH_UTILITIES_DIR AND EXISTS "${BSK_SDK_ARCH_UTILITIES_DIR}"
      AND DEFINED BSK_SDK_RUNTIME_MIN_DIR    AND EXISTS "${BSK_SDK_RUNTIME_MIN_DIR}")
-    file(GLOB _srcs
-      "${BSK_SDK_ARCH_MIN_DIR}/*.c"        "${BSK_SDK_ARCH_MIN_DIR}/*.cpp"
-      "${BSK_SDK_ARCH_UTILITIES_DIR}/*.c"  "${BSK_SDK_ARCH_UTILITIES_DIR}/*.cpp"
-      "${BSK_SDK_RUNTIME_MIN_DIR}/*.c"     "${BSK_SDK_RUNTIME_MIN_DIR}/*.cpp"
-    )
-    set(${out_sources}   "${_srcs}"          PARENT_SCOPE)
-    set(${out_link_libs} "bsk::sdk_headers"  PARENT_SCOPE)
+
+    if(NOT TARGET bsk_sdk_runtime_static)
+      file(GLOB _srcs
+        "${BSK_SDK_ARCH_MIN_DIR}/*.c"        "${BSK_SDK_ARCH_MIN_DIR}/*.cpp"
+        "${BSK_SDK_ARCH_UTILITIES_DIR}/*.c"  "${BSK_SDK_ARCH_UTILITIES_DIR}/*.cpp"
+        "${BSK_SDK_RUNTIME_MIN_DIR}/*.c"     "${BSK_SDK_RUNTIME_MIN_DIR}/*.cpp"
+      )
+
+      if(DEFINED BSK_SDK_C_MSG_INTERFACE_DIR AND EXISTS "${BSK_SDK_C_MSG_INTERFACE_DIR}")
+        file(GLOB _c_msg_srcs "${BSK_SDK_C_MSG_INTERFACE_DIR}/*.cpp")
+        list(APPEND _srcs ${_c_msg_srcs})
+      endif()
+
+      add_library(bsk_sdk_runtime_static STATIC ${_srcs})
+      add_library(bsk::sdk_runtime ALIAS bsk_sdk_runtime_static)
+
+      set_target_properties(bsk_sdk_runtime_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+      target_link_libraries(bsk_sdk_runtime_static PUBLIC bsk::sdk_headers Eigen3::Eigen)
+      target_include_directories(bsk_sdk_runtime_static PUBLIC
+        "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities"
+        "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities/moduleIdGenerator"
+      )
+      if(MSVC)
+        target_compile_definitions(bsk_sdk_runtime_static PUBLIC _USE_MATH_DEFINES)
+      endif()
+    endif()
+
+    set(${out_link_libs} "bsk::sdk_runtime"  PARENT_SCOPE)
   else()
-    set(${out_sources} "" PARENT_SCOPE)
     _bsk_resolve_basilisk_libs(_libs)
     set(${out_link_libs} "${_libs}" PARENT_SCOPE)
-  endif()
-endfunction()
-
-# Collect the pre-generated built-in C message interface definitions shipped by
-# the SDK. These mirror Basilisk's cMsgCInterface autoSource output so C modules
-# can include "cMsgCInterface/<Name>_C.h" without per-message CMake wiring.
-function(_bsk_resolve_builtin_c_msg_interface_sources out_sources)
-  if(DEFINED BSK_SDK_C_MSG_INTERFACE_DIR AND EXISTS "${BSK_SDK_C_MSG_INTERFACE_DIR}")
-    file(GLOB _srcs "${BSK_SDK_C_MSG_INTERFACE_DIR}/*.cpp")
-    set(${out_sources} "${_srcs}" PARENT_SCOPE)
-  else()
-    set(${out_sources} "" PARENT_SCOPE)
   endif()
 endfunction()
 
@@ -318,9 +327,8 @@ function(bsk_add_swig_module)
 
   _bsk_find_build_deps()
 
-  _bsk_resolve_sdk_sources(_bsk_sdk_sources _bsk_sdk_link_libs)
-  set(BSK_LINK_LIBS ${_bsk_sdk_link_libs} ${BSK_LINK_LIBS})
-  _bsk_resolve_builtin_c_msg_interface_sources(_bsk_builtin_c_msg_sources)
+  _bsk_resolve_sdk_sources(_bsk_sdk_link_libs)
+  set(BSK_LINK_LIBS ${BSK_LINK_LIBS} ${_bsk_sdk_link_libs})
 
   _bsk_collect_swig_flags(_swig_flags)
 
@@ -343,20 +351,6 @@ function(bsk_add_swig_module)
   _bsk_configure_swig_target(
     ${BSK_TARGET} "${BSK_OUTPUT_DIR}" "${BSK_LINK_LIBS}" "${BSK_INCLUDE_DIRS}"
   )
-
-  if(_bsk_sdk_sources OR _bsk_builtin_c_msg_sources)
-    target_sources(${BSK_TARGET} PRIVATE
-      ${_bsk_sdk_sources}
-      ${_bsk_builtin_c_msg_sources}
-    )
-    target_include_directories(${BSK_TARGET} PRIVATE
-      "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities"
-      "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities/moduleIdGenerator"
-    )
-    if(MSVC)
-      target_compile_definitions(${BSK_TARGET} PRIVATE _USE_MATH_DEFINES)
-    endif()
-  endif()
 
   if(BSK_DEPENDS)
     add_dependencies(${BSK_TARGET} ${BSK_DEPENDS})
