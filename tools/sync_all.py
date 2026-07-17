@@ -138,6 +138,7 @@ def main() -> int:
         "sync_runtime.py",
         "sync_sources.py",
         "sync_swig.py",
+        "sync_rust.py",
     ]
 
     for s in scripts:

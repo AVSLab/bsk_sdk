@@ -1,0 +1,36 @@
+[package]
+name    = "mrp-rust-controller"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+# Produce a C-compatible static archive that the SWIG module links against.
+crate-type = ["staticlib"]
+
+# bsk-build/bsk-messages/bsk-utilities aren't published to crates.io yet, so
+# plugins depend on them straight from the Basilisk repository via Cargo's
+# `git` support (Cargo finds the crate by name anywhere in the repo; no
+# `path` key needed/allowed alongside `git`). No `branch`/`tag` pin: this
+# resolves against Basilisk's default branch (`develop`), which is the right
+# thing once Rust module support has landed there (BSK-1482; see the SDK
+# README for how to build against the in-progress branch until it does). To
+# iterate against a newer/local Basilisk checkout afterward, add a `[patch]`
+# override in your own (gitignored) `.cargo/config.toml` instead of editing
+# these entries -- see "Writing a Rust Plugin" in the Basilisk docs.
+[dependencies]
+bsk-messages = { git = "https://github.com/AVSLab/basilisk" }
+# `bsk_module!()` (used in src/lib.rs below) lives in bsk-build alongside the
+# `build.rs` codegen that generates what it includes — see its docs. This
+# entry pulls in only the macro; codegen (needed by build.rs, not by this
+# entry) is behind bsk-build's opt-in `codegen` feature, enabled only on the
+# `[build-dependencies]` entry below.
+bsk-build = { git = "https://github.com/AVSLab/basilisk" }
+
+[build-dependencies]
+bsk-build = { git = "https://github.com/AVSLab/basilisk", features = ["codegen"] }
+
+# Makes `self.bskLogger.warning(...)` (used in `reset` above) print to
+# stderr / panic instead of linking Basilisk's C logging symbols, which
+# aren't available during `cargo test`. See bsk-build's docs for details.
+[dev-dependencies]
+bsk-build = { git = "https://github.com/AVSLab/basilisk", features = ["test_logger"] }

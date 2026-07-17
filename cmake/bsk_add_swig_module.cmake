@@ -360,5 +360,15 @@ function(bsk_add_swig_module)
 
   if(BSK_DEPENDS)
     add_dependencies(${BSK_TARGET} ${BSK_DEPENDS})
+    # The SWIG *compilation* step (which opens headers referenced by %include)
+    # runs before the link step and in parallel with other custom commands.
+    # If any dependency generates a header that the .i file %include-s (e.g. the
+    # Cargo build in bsk_add_rust_module generates the module's .h file), SWIG
+    # will fail on a cold build because the header does not exist yet.
+    # CMake's UseSWIG creates an intermediate target named ${TARGET}_swig_compilation
+    # for this step; adding the same dependencies there serialises it correctly.
+    if(TARGET "${BSK_TARGET}_swig_compilation")
+      add_dependencies("${BSK_TARGET}_swig_compilation" ${BSK_DEPENDS})
+    endif()
   endif()
 endfunction()

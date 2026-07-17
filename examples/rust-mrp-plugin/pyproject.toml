@@ -1,0 +1,33 @@
+[build-system]
+# bsk-sdk and swig are not published on PyPI (bsk-sdk is a local, editable
+# dev dependency; see README).  Always install with `--no-build-isolation`
+# so pip uses the already-installed copies in the active venv instead of
+# trying (and failing) to fetch these names from PyPI:
+#
+#   pip install -e . --no-build-isolation
+#
+requires = ["scikit-build-core>=0.9.3", "bsk-sdk", "swig==4.4.1"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "rust-mrp-plugin"
+version = "0.1.0"
+description = "Example Basilisk attitude controller implemented in Rust"
+requires-python = ">=3.9"
+# "bsk-sdk" (for the show_plots pytest fixture) and Basilisk itself are local,
+# editable dev installs (see README); not declared here since they aren't on
+# PyPI and must already be present in the active venv.
+# Add "bsk==X.Y.Z" when targeting a released BSK wheel.
+dependencies = []
+
+[tool.scikit-build]
+# CMake writes the generated SWIG wrapper and native extension directly to
+# SKBUILD_PLATLIB_DIR. The package initializer is installed by CMake.
+wheel.packages = []
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    # scikit-build-core's editable install hook is imported before pytest can
+    # set up assert rewriting; the warning is harmless (no test code lives there).
+    "ignore:Module already imported so cannot be rewritten.*:pytest.PytestAssertRewriteWarning",
+]

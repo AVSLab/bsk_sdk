@@ -27,6 +27,12 @@ Copies selected directories from the main Basilisk `src/` tree into:
     sdk/src/bsk_sdk/include/Basilisk/
 
 Only the headers that extension authors need to compile against are included.
+Rust plugins use this same header tree for a custom message type's own
+C-interface header (via ``build.rs``/``bindgen``); the built-in
+``bsk-build``/``bsk-messages``/``bsk-utilities`` crates come from the
+Basilisk repository directly instead (see ``sync_rust.py``, which only
+copies the Rust module CMake macro, and "Writing a Rust Plugin" in the
+Basilisk docs).
 """
 
 from __future__ import annotations
