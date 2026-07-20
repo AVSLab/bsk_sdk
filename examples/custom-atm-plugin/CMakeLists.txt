@@ -34,7 +34,7 @@ file(GLOB PLUGIN_SOURCES CONFIGURE_DEPENDS
 )
 # Note: do NOT add SDK sources (arch_min, arch_utilities, runtime_min, or
 # built-in cMsgCInterface definitions) here.
-# bsk_add_swig_module compiles them automatically into the plugin target.
+# bsk_add_swig_module builds and links them through the shared runtime target.
 list(APPEND PLUGIN_SOURCES
   "${CMAKE_CURRENT_SOURCE_DIR}/planetStateProbe/planetStateProbe.c"
 )
