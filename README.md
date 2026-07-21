@@ -73,6 +73,20 @@ for the `UpdateStateImpl` naming rules and nopython-mode constraints. The
 [`scenarioNumbaAtmosphereExtension.py`](examples/scenarioNumbaAtmosphereExtension.py)
 is an executable example using the installed extension wheel.
 
+### Message lifetime support
+
+Starting with Basilisk 2.12, messages generated through
+`bsk_generate_messages()` participate in Basilisk's source-retention behavior.
+An object-based reader subscription or message recorder keeps its stand-alone
+source alive until the subscription or recorder is released. This includes
+extension-defined C++ readers, `Message.recorder()`, and direct
+`Recorder(Message)` construction.
+
+The SDK also synchronizes Basilisk's owner-aware C-message wrapper support, so
+wrapped C modules retain the config or module object that owns an embedded
+`Msg_C` source rather than a transient SWIG proxy. Raw-address subscriptions
+remain caller-owned and do not create a keep-alive reference.
+
 ## Building and testing
 
 In a fresh clone, generate the ignored SDK artifacts before disabling automatic
