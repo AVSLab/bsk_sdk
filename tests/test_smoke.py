@@ -87,3 +87,38 @@ def test_msg_autosource_generators_present() -> None:
         "cMsgCInterfacePy.i.in",
     ):
         assert (autosrc / name).exists(), f"Missing msgAutoSource file: {name}"
+
+
+def test_message_source_keep_alive_support_present() -> None:
+    """The installed SDK carries the Basilisk 2.12 message lifetime hooks."""
+    package_root = Path(bsk_sdk.package_root())
+    autosrc = Path(bsk_sdk.msg_autosource_dir())
+
+    c_msg_template = (autosrc / "cMsgCInterfacePy.i.in").read_text()
+    assert "_msgKeepAlive.retainSource(self, source)" in c_msg_template
+    assert "_msgKeepAlive.retainRecorderSource(recorder, self)" in c_msg_template
+
+    msg_template = (autosrc / "msgInterfacePy.i.in").read_text()
+    assert (
+        "_msgKeepAlive.retainRecorderConstructorSource(self, args[0], {type})"
+        in msg_template
+    )
+
+    messaging_dir = (
+        package_root / "include" / "Basilisk" / "architecture" / "messaging"
+    )
+    messaging_header = (messaging_dir / "messaging.h").read_text()
+    assert "void setSource(void* handle" in messaging_header
+
+    messaging_impl = (messaging_dir / "newMessaging.ih").read_text()
+    assert "self._install_keepalive(source)" in messaging_impl
+    assert "return self._recorder_with_keepalive(self, timeDiff)" in messaging_impl
+
+    c_wrapper = (
+        Path(bsk_sdk.swig_dir())
+        / "architecture"
+        / "_GeneralModuleFiles"
+        / "swig_c_wrap.i"
+    ).read_text()
+    assert "_msgKeepAlive.registerModule(self)" in c_wrapper
+    assert "_msgKeepAlive.transferModuleOwner(args[0], self)" in c_wrapper

@@ -12,7 +12,9 @@ suite still passes in environments that only have bsk-sdk installed.
 
 from __future__ import annotations
 
+import gc
 import math
+import weakref
 
 import pytest
 
@@ -35,6 +37,16 @@ def _extension_messaging():
         "custom_atm.__init__ must import generated messaging before module wrappers"
     )
     return custom_atm.messaging
+
+
+def _custom_status_message(density: float):
+    """Create and write an extension-defined status message."""
+    extension_messaging = _extension_messaging()
+    payload = extension_messaging.CustomAtmStatusMsgPayload()
+    payload.density = density  # [kg/m^3]
+    payload.scaleHeight = 8_500.0  # [m]
+    payload.modelValid = 1
+    return extension_messaging.CustomAtmStatusMsg().write(payload)
 
 
 @pytest.fixture()
@@ -110,6 +122,62 @@ def test_package_import_exposes_generated_messaging():
     rec = msg.recorder()
 
     assert rec is not None
+
+
+def test_custom_reader_retains_standalone_message():
+    """An SDK-generated reader keeps its custom C++ message source alive."""
+    extension_messaging = _extension_messaging()
+    source = _custom_status_message(2.0)  # [kg/m^3]
+    source_reference = weakref.ref(source)
+    reader = extension_messaging.CustomAtmStatusMsgReader()
+    reader.subscribeTo(source)
+
+    del source
+    gc.collect()
+
+    assert source_reference() is not None
+    assert reader().density == pytest.approx(2.0)
+
+    del reader
+    gc.collect()
+    assert source_reference() is None
+
+
+def test_custom_recorder_retains_standalone_message():
+    """A custom message's recorder keeps its source alive."""
+    source = _custom_status_message(3.0)  # [kg/m^3]
+    source_reference = weakref.ref(source)
+    recorder = source.recorder()
+
+    del source
+    gc.collect()
+
+    assert source_reference() is not None
+    recorder.UpdateState(0)  # [ns]
+    assert recorder.density[0] == pytest.approx(3.0)
+
+    del recorder
+    gc.collect()
+    assert source_reference() is None
+
+
+def test_direct_custom_recorder_retains_standalone_message():
+    """Direct custom recorder construction keeps its C++ source alive."""
+    extension_messaging = _extension_messaging()
+    source = _custom_status_message(4.0)  # [kg/m^3]
+    source_reference = weakref.ref(source)
+    recorder = extension_messaging.CustomAtmStatusMsgRecorder(source)
+
+    del source
+    gc.collect()
+
+    assert source_reference() is not None
+    recorder.UpdateState(0)  # [ns]
+    assert recorder.density[0] == pytest.approx(4.0)
+
+    del recorder
+    gc.collect()
+    assert source_reference() is None
 
 
 def test_density_at_400km(sim_env):
