@@ -65,10 +65,11 @@ def main() -> None:
 
     SDK_SWIG_ROOT.mkdir(parents=True, exist_ok=True)
 
-    # Auto-discover all .i and .swg files under architecture/_GeneralModuleFiles
-    # and architecture/utilities, mirroring the structure under swig/.
+    # Auto-discover all root .i and .swg files used by extension wrappers,
+    # mirroring their architecture subdirectories under swig/.
     swig_src_dirs = [
         arch_src / "_GeneralModuleFiles",
+        arch_src / "messaging",
         arch_src / "utilities",
     ]
 
