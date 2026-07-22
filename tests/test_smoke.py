@@ -44,6 +44,17 @@ def test_swig_dir_exists() -> None:
     assert Path(bsk_sdk.swig_dir()).is_dir()
 
 
+def test_messaging_base_swig_interface_present() -> None:
+    """The installed SDK includes the shared messaging base interface."""
+    messaging_base = (
+        Path(bsk_sdk.swig_dir())
+        / "architecture"
+        / "messaging"
+        / "messagingBase.i"
+    )
+    assert messaging_base.is_file()
+
+
 def test_tools_dir_exists() -> None:
     assert Path(bsk_sdk.tools_dir()).is_dir()
 
