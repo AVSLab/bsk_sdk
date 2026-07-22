@@ -116,11 +116,14 @@ def test_c_message_interface_round_trips():
 
 
 def test_package_import_exposes_generated_messaging():
-    """Package import exposes generated message bindings and recorders."""
+    """Generated messages use Basilisk's shared messaging base types."""
     extension_messaging = _extension_messaging()
     msg = extension_messaging.CustomAtmStatusMsg()
+    reader = extension_messaging.CustomAtmStatusMsgReader()
     rec = msg.recorder()
 
+    assert isinstance(msg, messaging.MessageBase)
+    assert isinstance(reader, messaging.ReadFunctorBase)
     assert rec is not None
 
 
