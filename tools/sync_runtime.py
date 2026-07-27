@@ -44,7 +44,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from _sync_paths import SDK_REPO_ROOT, resolve_basilisk_src_root
-from common import copy_file  # noqa: E402
+from common import copy_file, reset_dir  # noqa: E402
 
 SDK_RUNTIME_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "runtime_min"
 SDK_INCLUDE_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "include" / "Basilisk"
@@ -142,7 +142,8 @@ def main() -> None:
     if not src_root.exists():
         raise RuntimeError(f"Expected Basilisk src directory not found: {src_root}")
 
-    SDK_RUNTIME_ROOT.mkdir(parents=True, exist_ok=True)
+    reset_dir(SDK_RUNTIME_ROOT)
+    reset_dir(SDK_COMPAT_INCLUDE_ROOT)
 
     for top in RUNTIME_TOP_DIRS:
         top_dir = src_root / top
