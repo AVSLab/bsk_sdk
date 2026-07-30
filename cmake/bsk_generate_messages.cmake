@@ -63,7 +63,7 @@ function(_bsk_resolve_msg_autosource_dir out_var)
     "generatePayloadEqualityHeader.py under:\n"
     "  ${_cand_list}\n\n"
     "Re-sync the SDK tools (requires BSK >= 2.11):\n"
-    "  python3 tools/sync_all.py --sync-submodules\n\n"
+    "  python3 tools/sync_all.py\n\n"
     "Or set BSK_SDK_MSG_AUTOSOURCE_DIR explicitly."
   )
 endfunction()
@@ -101,12 +101,61 @@ function(bsk_generate_messages)
   set(_gen_c "False")
   if(BSK_GENERATE_C_INTERFACE)
     set(_gen_c "True")
+    if(NOT DEFINED BSK_SDK_C_MSG_TEMPLATE_DIR
+        OR NOT EXISTS "${BSK_SDK_C_MSG_TEMPLATE_DIR}/msg_C.h.in"
+        OR NOT EXISTS "${BSK_SDK_C_MSG_TEMPLATE_DIR}/msg_C.cpp.in")
+      message(FATAL_ERROR
+        "bsk_generate_messages(GENERATE_C_INTERFACE) requires the C-message "
+        "templates shipped with bsk-sdk. Re-sync or reinstall the matching SDK.")
+    endif()
+    set(_c_interface_dir "${_auto_root}/cMsgCInterface")
+    file(MAKE_DIRECTORY "${_c_interface_dir}")
+    set_property(GLOBAL APPEND PROPERTY BSK_SDK_EXTENSION_C_MSG_DIRS
+                 "${_c_interface_dir}")
+    list(APPEND _swig_flags "-I${_auto_root}")
   endif()
 
   foreach(_hdr IN LISTS BSK_MSG_HEADERS)
     get_filename_component(_hdr_abs "${_hdr}" ABSOLUTE)
     get_filename_component(_payload_name "${_hdr_abs}" NAME_WE)
     get_filename_component(_hdr_dir "${_hdr_abs}" DIRECTORY)
+
+    if(BSK_GENERATE_C_INTERFACE)
+      string(REGEX REPLACE "Payload$" "" _c_message_type "${_payload_name}")
+      if(_c_message_type STREQUAL _payload_name OR _c_message_type STREQUAL "")
+        message(FATAL_ERROR
+          "GENERATE_C_INTERFACE requires a payload header named "
+          "<MessageName>Payload.h; received ${_hdr_abs}")
+      endif()
+
+      file(TO_CMAKE_PATH "${_hdr_abs}" MSG_AUTOSOURCE_HEADER)
+      set(MSG_AUTOSOURCE_TYPE "${_c_message_type}")
+      set(MSG_AUTOSOURCE_LICENSE
+        "Generated using bsk-sdk from an extension-owned payload. See the extension and Basilisk licenses.")
+      set(_c_header "${_c_interface_dir}/${_c_message_type}_C.h")
+      set(_c_source "${_c_interface_dir}/${_c_message_type}_C.cpp")
+      configure_file(
+        "${BSK_SDK_C_MSG_TEMPLATE_DIR}/msg_C.h.in"
+        "${_c_header}"
+        @ONLY
+      )
+      configure_file(
+        "${BSK_SDK_C_MSG_TEMPLATE_DIR}/msg_C.cpp.in"
+        "${_c_source}"
+        @ONLY
+      )
+      set_source_files_properties("${_c_header}" "${_c_source}"
+                                  PROPERTIES GENERATED TRUE)
+      if(TARGET bsk_sdk_runtime_static)
+        target_sources(bsk_sdk_runtime_static PRIVATE "${_c_source}")
+        target_include_directories(bsk_sdk_runtime_static PUBLIC
+                                   "${_auto_root}")
+      else()
+        message(FATAL_ERROR
+          "The SDK runtime target is required to compile extension C-message "
+          "interfaces")
+      endif()
+    endif()
 
     # Detect C vs C++ based on GENERATE_C_INTERFACE flag
     if(BSK_GENERATE_C_INTERFACE)
@@ -143,6 +192,8 @@ function(bsk_generate_messages)
     file(TO_CMAKE_PATH "${_hdr_abs}" _hdr_include)
     set(_eq_forward_dir "${_auto_root}/architecture/${_eq_payload_search_dir}")
     set(_eq_forward_hdr "${_eq_forward_dir}/${_payload_name}.h")
+    set(_eq_payload_header_include
+        "architecture/${_eq_payload_search_dir}/${_payload_name}.h")
     file(MAKE_DIRECTORY "${_eq_forward_dir}")
     file(WRITE "${_eq_forward_hdr}"
       "#pragma once\n"
@@ -153,8 +204,8 @@ function(bsk_generate_messages)
     add_custom_command(
       OUTPUT "${_eq_out}"
       COMMAND ${Python3_EXECUTABLE}
-              "${_gen_eq}"
-              "${_eq_out}" "${_meta_out}" "${_payload_name}" "${_eq_payload_search_dir}"
+              "${_gen_eq}" "${_eq_out}" "${_meta_out}" "${_payload_name}"
+              "${_eq_payload_header_include}"
       DEPENDS "${_meta_out}" "${_gen_eq}" "${_eq_forward_hdr}"
       WORKING_DIRECTORY "${_msg_autosrc}"
       COMMENT "Generating payload equality header for ${_payload_name}"
@@ -202,8 +253,8 @@ function(bsk_generate_messages)
     if(NOT EXISTS "${_eq_out}")
       execute_process(
         COMMAND ${Python3_EXECUTABLE}
-                "${_gen_eq}"
-                "${_eq_out}" "${_meta_out}" "${_payload_name}" "${_eq_payload_search_dir}"
+                "${_gen_eq}" "${_eq_out}" "${_meta_out}" "${_payload_name}"
+                "${_eq_payload_header_include}"
         WORKING_DIRECTORY "${_msg_autosrc}"
         RESULT_VARIABLE _gen_rc
         ERROR_VARIABLE  _gen_err
