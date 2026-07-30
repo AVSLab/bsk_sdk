@@ -46,7 +46,7 @@ def resolve_basilisk_root(basilisk_root_arg: str | None) -> Path:
     raise RuntimeError(
         "Could not locate Basilisk repository root. "
         f"Set --basilisk-root or {BSK_BASILISK_ROOT_ENV}, "
-        "or initialize external/basilisk submodule."
+        "or run python3 tools/sync_all.py to initialize external/basilisk."
     )
 
 

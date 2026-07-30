@@ -52,7 +52,28 @@ def _required_sync_paths(repo_root: Path) -> list[Path]:
         sdk_src / "arch_utilities",
         sdk_src / "runtime_min",
         sdk_src / "swig",
+        sdk_src / "rust",
+        sdk_src / "message_templates",
     ]
+
+
+def _rust_support_files(repo_root: Path) -> list[Path]:
+    """Return every Rust support artifact listed by the generated manifest."""
+    rust_root = repo_root / "src" / "bsk_sdk" / "rust"
+    manifest = rust_root / "support-manifest.txt"
+    if not manifest.is_file():
+        return [manifest]
+
+    paths = [manifest]
+    for line in manifest.read_text(encoding="utf-8").splitlines():
+        entry = line.strip()
+        if not entry or entry.startswith("#"):
+            continue
+        relative = Path(entry)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise RuntimeError(f"Invalid Rust support manifest entry: {entry}")
+        paths.append(rust_root / relative)
+    return paths
 
 
 def _required_sync_files(repo_root: Path) -> list[Path]:
@@ -72,6 +93,9 @@ def _required_sync_files(repo_root: Path) -> list[Path]:
         msg_auto / "generateSWIGModules.py",
         msg_auto / "msgInterfacePy.i.in",
         msg_auto / "cMsgCInterfacePy.i.in",
+        repo_root / "src" / "bsk_sdk" / "message_templates" / "msg_C.h.in",
+        repo_root / "src" / "bsk_sdk" / "message_templates" / "msg_C.cpp.in",
+        *_rust_support_files(repo_root),
     ]
 
 
@@ -94,25 +118,35 @@ def _assert_synced_artifacts(repo_root: Path) -> None:
         "bsk-sdk vendored Basilisk artifacts are missing or empty:\n"
         f"{missing_text}\n\n"
         "Run this first:\n"
-        "  python3 tools/sync_all.py --sync-submodules\n\n"
+        "  python3 tools/sync_all.py\n\n"
         "Or opt into auto-sync during build:\n"
         "  BSK_SDK_AUTO_SYNC=1 pip install -e ."
     )
 
 
 def _run_sync() -> None:
-    """Execute ``tools/sync_all.py`` to pull vendored Basilisk artifacts from the submodule."""
+    """Synchronize vendored artifacts from the selected Basilisk checkout."""
     repo_root = Path(__file__).resolve().parent
     sync_script = repo_root / "tools" / "sync_all.py"
     if not sync_script.exists():
         return
 
-    cmd = [sys.executable, str(sync_script)]
+    # A PEP 517 source archive intentionally excludes repository examples.
+    # Automatic builds need only the vendored SDK artifacts, so keep example
+    # manifest maintenance in the explicit developer sync workflow.
+    cmd = [sys.executable, str(sync_script), "--skip-example-updates"]
+    basilisk_root = os.environ.get("BSK_BASILISK_ROOT") or None
 
-    if _truthy(os.environ.get("BSK_SDK_SYNC_SUBMODULES"), default=True):
+    # The submodule is the default source only when the caller did not select a
+    # checkout explicitly. An explicit override may be offline, uncommitted, or
+    # used from an sdist without Git metadata, so do not touch the unrelated
+    # submodule unless the caller specifically requests both operations.
+    if _truthy(
+        os.environ.get("BSK_SDK_SYNC_SUBMODULES"),
+        default=basilisk_root is None,
+    ):
         cmd.append("--sync-submodules")
 
-    basilisk_root = os.environ.get("BSK_BASILISK_ROOT")
     if basilisk_root:
         cmd.extend(["--basilisk-root", basilisk_root])
 

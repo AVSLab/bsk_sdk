@@ -7,6 +7,9 @@ src/bsk_sdk/include_compat/*
 src/bsk_sdk/runtime_min/*
 src/bsk_sdk/swig/*
 tools/msgAutoSource/*
+src/bsk_sdk/rust/*
+src/bsk_sdk/message_templates/*
+examples/custom-atm-extension/target/
 
 # Standard Python ignores
 # Byte-compiled / optimized / DLL files

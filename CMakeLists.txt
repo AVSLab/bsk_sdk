@@ -15,6 +15,8 @@ set(BSK_RUNTIME_MIN_SRC_DIR       "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/runti
 set(BSK_SDK_COMPAT_INCLUDE_DIR    "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/include_compat")
 set(BSK_SDK_SWIG_SRC_DIR          "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/swig")
 set(BSK_SDK_TOOLS_SRC_DIR         "${CMAKE_CURRENT_SOURCE_DIR}/tools")
+set(BSK_SDK_RUST_SRC_DIR          "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/rust")
+set(BSK_SDK_MESSAGE_TEMPLATE_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/message_templates")
 
 find_package(Eigen3 CONFIG QUIET)
 if(NOT Eigen3_FOUND)
@@ -112,6 +114,16 @@ install(
   DIRECTORY "${BSK_SDK_TOOLS_SRC_DIR}/"
   DESTINATION "tools"
   PATTERN "__pycache__" EXCLUDE
+)
+
+install(
+  DIRECTORY "${BSK_SDK_RUST_SRC_DIR}/"
+  DESTINATION "rust"
+)
+
+install(
+  DIRECTORY "${BSK_SDK_MESSAGE_TEMPLATE_SRC_DIR}/"
+  DESTINATION "message_templates"
 )
 
 install(

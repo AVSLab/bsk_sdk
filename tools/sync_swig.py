@@ -41,13 +41,20 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 from _sync_paths import SDK_REPO_ROOT, resolve_basilisk_root
-from common import copy_file  # noqa: E402
+from common import copy_file, reset_dir  # noqa: E402
 
 SDK_SWIG_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "swig"
 SDK_MSG_AUTOSOURCE_ROOT = SDK_REPO_ROOT / "tools" / "msgAutoSource"
+SDK_C_MSG_TEMPLATE_ROOT = SDK_REPO_ROOT / "src" / "bsk_sdk" / "message_templates"
+
+C_MESSAGE_TEMPLATE_FILES = (
+    "msg_C.h.in",
+    "msg_C.cpp.in",
+)
 
 # msgAutoSource directory in BSK, relative to basilisk root.
 BSK_MSG_AUTOSOURCE = "src/architecture/messaging/msgAutoSource"
+
 
 def main() -> None:
     ap = argparse.ArgumentParser(
@@ -63,7 +70,7 @@ def main() -> None:
     basilisk_root = resolve_basilisk_root(args.basilisk_root)
     arch_src = basilisk_root / "src" / "architecture"
 
-    SDK_SWIG_ROOT.mkdir(parents=True, exist_ok=True)
+    reset_dir(SDK_SWIG_ROOT)
 
     # Auto-discover all root .i and .swg files used by extension wrappers,
     # mirroring their architecture subdirectories under swig/.
@@ -91,10 +98,10 @@ def main() -> None:
             f"[bsk-sdk] Missing msgAutoSource directory:\n  {bsk_msg_auto}"
         )
 
-    SDK_MSG_AUTOSOURCE_ROOT.mkdir(parents=True, exist_ok=True)
+    reset_dir(SDK_MSG_AUTOSOURCE_ROOT)
     msg_copied = 0
     for src_file in sorted(bsk_msg_auto.iterdir()):
-        if not src_file.is_file():
+        if not src_file.is_file() or src_file.name.startswith("."):
             continue
         dst = SDK_MSG_AUTOSOURCE_ROOT / src_file.name
         print(f"[bsk-sdk] Copying {src_file} -> {dst}")
@@ -102,6 +109,21 @@ def main() -> None:
         msg_copied += 1
 
     print(f"[bsk-sdk] msgAutoSource synchronization complete ({msg_copied} files).")
+
+    c_message_template_root = arch_src / "messaging" / "cMsgCInterface"
+    reset_dir(SDK_C_MSG_TEMPLATE_ROOT)
+    for filename in C_MESSAGE_TEMPLATE_FILES:
+        source = c_message_template_root / filename
+        if not source.is_file():
+            raise FileNotFoundError(f"Missing Basilisk C-message template: {source}")
+        destination = SDK_C_MSG_TEMPLATE_ROOT / filename
+        print(f"[bsk-sdk] Copying {source} -> {destination}")
+        copy_file(source, destination)
+
+    print(
+        "[bsk-sdk] C-message template synchronization complete "
+        f"({len(C_MESSAGE_TEMPLATE_FILES)} files)."
+    )
 
 
 if __name__ == "__main__":

@@ -25,6 +25,8 @@ and the CMake config directory contains the expected files.
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 import bsk_sdk
@@ -56,7 +58,10 @@ def test_messaging_base_swig_interface_present() -> None:
 
 
 def test_tools_dir_exists() -> None:
-    assert Path(bsk_sdk.tools_dir()).is_dir()
+    tools = Path(bsk_sdk.tools_dir())
+    assert tools.is_dir()
+    assert (tools / "_versioning.py").is_file()
+    assert (tools / "sync_rust.py").is_file()
 
 
 def test_cmake_config_dir_exists() -> None:
@@ -70,6 +75,9 @@ def test_cmake_config_files_present() -> None:
     assert (config_dir / "bsk_add_swig_module.cmake").exists()
     assert (config_dir / "bsk_add_python_module.cmake").exists()
     assert (config_dir / "bsk_generate_messages.cmake").exists()
+    assert (config_dir / "bsk_add_rust_module.cmake").exists()
+    assert (config_dir / "bsk_extension_compatibility.cmake").exists()
+    assert (config_dir / "bsk_extension_compatibility.py.in").exists()
 
 
 def test_sdk_source_dirs_exist() -> None:
@@ -85,6 +93,56 @@ def test_builtin_c_msg_interfaces_present() -> None:
     assert cmsg.is_dir(), f"c_msg_interface_dir() does not exist: {cmsg}"
     for name in ("SpicePlanetStateMsg_C.h", "SpicePlanetStateMsg_C.cpp"):
         assert (cmsg / name).exists(), f"Missing built-in C message interface: {name}"
+
+
+def test_rust_build_support_present() -> None:
+    """The installed SDK carries synchronized Rust/CMake integration files."""
+    rust = Path(bsk_sdk.rust_dir())
+    manifest = rust / "support-manifest.txt"
+    assert manifest.is_file()
+    entries = [
+        line.strip()
+        for line in manifest.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    ]
+    for relative in entries:
+        assert (rust / relative).is_file(), f"Missing Rust support file: {relative}"
+
+    assert bsk_sdk.rust_minimum_version()
+    assert bsk_sdk.rust_support_crate_version()
+    assert bsk_sdk.rust_license_tool_version()
+    assert Path(bsk_sdk.rust_license_generator()).is_file()
+    assert Path(bsk_sdk.rust_license_config()).is_file()
+    libclang = Path(bsk_sdk.rust_libclang_dir())
+    assert libclang.is_dir()
+    assert any(path.name.startswith("libclang") for path in libclang.iterdir())
+
+
+def test_relocated_rust_license_generator_requires_project_paths() -> None:
+    """The installed generator rejects ambiguous source-tree defaults."""
+    result = subprocess.run(
+        [sys.executable, bsk_sdk.rust_license_generator()],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 2
+    assert "--manifest-path" in result.stderr
+    assert "--output" in result.stderr
+
+
+def test_c_message_templates_present() -> None:
+    """Language-neutral C-message templates are packaged outside Rust support."""
+    templates = Path(bsk_sdk.package_root()) / "message_templates"
+    assert (templates / "msg_C.h.in").is_file()
+    assert (templates / "msg_C.cpp.in").is_file()
+
+
+def test_rust_crate_sources_are_not_packaged_as_headers() -> None:
+    """Versioned Rust crates are not duplicated under the SDK include tree."""
+    include_root = Path(bsk_sdk.include_dir()) / "Basilisk" / "architecture"
+    assert not (include_root / "rust").exists()
 
 
 def test_msg_autosource_generators_present() -> None:
