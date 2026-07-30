@@ -145,5 +145,7 @@ install(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bsk_add_swig_module.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bsk_add_python_module.cmake"
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bsk_generate_messages.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bsk_extension_compatibility.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/bsk_extension_compatibility.py.in"
   DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/bsk-sdk"
 )
