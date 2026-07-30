@@ -17,6 +17,14 @@
 #
 
 import sys
+
+from ._bsk_compatibility import check_basilisk_compatibility as _check_basilisk
+
+
+# Run before importing any native wrapper so an incompatible Basilisk runtime
+# produces a descriptive Python exception instead of loading mismatched code.
+_check_basilisk()
+del _check_basilisk
 from Basilisk.architecture import cSysModel as _cSysModel
 
 # IMPORTANT: register cSysModel under its short name *before* importing the

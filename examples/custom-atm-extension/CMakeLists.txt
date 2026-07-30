@@ -24,6 +24,13 @@ find_package(bsk-sdk CONFIG REQUIRED)
 # Where scikit-build-core places wheel outputs
 set(EXTENSION_PKG_DIR "${SKBUILD_PLATLIB_DIR}/custom_atm")
 
+# Record the exact Basilisk version and extension ABI in the wheel. The package
+# imports this guard before loading any compiled C, C++, or Rust module.
+bsk_add_extension_compatibility_guard(
+  EXTENSION_NAME "custom_atm"
+  OUTPUT_DIR "${EXTENSION_PKG_DIR}"
+)
+
 # =============================================================================
 # Extension-specific configuration
 # =============================================================================
