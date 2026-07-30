@@ -41,5 +41,11 @@ sys.modules.setdefault("cSysModel", _cSysModel)
 from . import messaging
 from . import customExponentialAtmosphere
 from . import numbaAtmosphere
+from . import rustAtmosphere
 
-__all__ = ["customExponentialAtmosphere", "messaging", "numbaAtmosphere"]
+__all__ = [
+    "customExponentialAtmosphere",
+    "messaging",
+    "numbaAtmosphere",
+    "rustAtmosphere",
+]

@@ -1,13 +1,14 @@
 [build-system]
-requires = ["scikit-build-core>=0.9.3", "numpy>=1.24", "bsk-sdk", "bsk", "swig==4.4.1"]
+requires = ["scikit-build-core>=0.9.3", "numpy>=1.24", "bsk-sdk==2.12.0b0", "bsk==2.12.0b0", "swig==4.4.1"]
 build-backend = "scikit_build_core.build"
 
 [project]
 name = "bsk-extension-exponential-atmosphere"
 version = "0.1.0"
-# Install the exact BSK version reported by bsk_sdk before building; the SDK's
-# CMake version guard rejects mismatched headers and runtime libraries.
-dependencies = ["bsk", "numba"]
+license = { file = "LICENSE" }
+# tools/sync_all.py keeps this runtime requirement aligned with the Basilisk
+# source selected for bsk-sdk. Extension projects should pin their target too.
+dependencies = ["bsk==2.12.0b0", "numba"]
 
 [tool.scikit-build]
 wheel.packages = ["custom_atm"]

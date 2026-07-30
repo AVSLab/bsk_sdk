@@ -69,7 +69,15 @@ bsk_add_swig_module(
 
 # Generate Python bindings for extension-defined messages
 bsk_generate_messages(
+  GENERATE_C_INTERFACE
   OUTPUT_DIR "${EXTENSION_PKG_DIR}/messaging"
   MSG_HEADERS
     "${CMAKE_CURRENT_SOURCE_DIR}/messages/CustomAtmStatusMsgPayload.h"
+)
+
+# Discover every marked Rust module in the extension Cargo workspace. Adding
+# another Rust module requires only registering it in the root Cargo.toml.
+bsk_add_rust_workspace(
+  MANIFEST "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
+  OUTPUT_DIR "${EXTENSION_PKG_DIR}"
 )
