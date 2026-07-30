@@ -37,6 +37,8 @@ jobs:
         with:
           python-version: "3.14"
 
+      - uses: dtolnay/rust-toolchain@stable
+
       - name: Clone Basilisk develop
         run: |
           git clone --depth 1 --branch develop \
@@ -64,9 +66,10 @@ jobs:
       - name: Build and test example extension
         run: |
           pip install scikit-build-core
-          python -m build --wheel --no-isolation -o extension-dist examples/custom-atm-extension
+          python -m build --wheel --no-isolation -o extension-dist \
+            -Cbuild-dir=extension-build examples/custom-atm-extension
           pip install extension-dist/*.whl
-          python -c "import Basilisk, numba, custom_atm; from custom_atm import numbaAtmosphere"
+          python -c "import Basilisk, numba, custom_atm; from custom_atm import numbaAtmosphere, rustAtmosphere"
           pytest examples -v
 
       - name: Notify on failure

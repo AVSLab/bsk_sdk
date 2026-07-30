@@ -14,6 +14,9 @@ inputs:
   clone-source:
     description: Clone Basilisk source to external/basilisk (needed for sync_all.py)
     default: "true"
+  use-submodule:
+    description: Use the repository's pinned external/basilisk submodule instead of cloning a release ref
+    default: "false"
   install-package:
     description: pip-install the BSK Python package set into the current environment
     default: "true"
@@ -22,7 +25,7 @@ runs:
   using: composite
   steps:
     - name: Clone Basilisk source
-      if: inputs.clone-source == 'true'
+      if: inputs.clone-source == 'true' && inputs.use-submodule != 'true'
       shell: bash
       run: |
         BSK="${{ inputs.version }}"
@@ -33,6 +36,11 @@ runs:
         fi
         git clone --depth 1 --branch "$REF" \
           https://github.com/AVSLab/basilisk.git external/basilisk
+
+    - name: Initialize pinned Basilisk source
+      if: inputs.clone-source == 'true' && inputs.use-submodule == 'true'
+      shell: bash
+      run: git submodule update --init --recursive external/basilisk
 
     - name: Install BSK Python package set
       if: inputs.install-package == 'true'

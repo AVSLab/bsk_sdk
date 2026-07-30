@@ -50,21 +50,45 @@ jobs:
           if [[ -z "$BSK" ]]; then
             echo "_bsk_version.txt is empty" >&2; exit 1
           fi
-          if [[ "$BSK" =~ beta|alpha ]]; then
-            echo "Cannot publish a pre-release SDK version (${BSK})." >&2
-            echo "Update _bsk_version.txt to a release or RC version before tagging." >&2
+          python tools/_versioning.py "$BSK"
+          if [[ "$GITHUB_REF_NAME" == v* && "$GITHUB_REF_NAME" != "v${BSK}" ]]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match synchronized BSK version ${BSK}." >&2
             exit 1
           fi
           echo "version=${BSK}" >> "$GITHUB_OUTPUT"
+
+      - uses: dtolnay/rust-toolchain@stable
 
       - uses: ./.github/actions/setup-bsk
         with:
           version: ${{ steps.bsk.outputs.version }}
           clone-source: "true"
-          install-package: "false"
+          install-package: "true"
 
       - name: Sync Basilisk artifacts
         run: python tools/sync_all.py
+
+      - name: Verify tagged Rust support dependencies
+        shell: bash
+        run: |
+          git diff --exit-code -- \
+            examples/custom-atm-extension/Cargo.toml \
+            examples/custom-atm-extension/rustAtmosphere/Cargo.toml
+          cargo fetch \
+            --manifest-path examples/custom-atm-extension/Cargo.toml \
+            --locked
+
+      - name: Verify tagged Rust dependency licenses
+        shell: bash
+        run: |
+          CARGO_ABOUT_VERSION=$(python -c 'import json; print(json.load(open("src/bsk_sdk/rust/support-versions.json"))["BSK_CARGO_ABOUT_VERSION"])')
+          cargo install cargo-about \
+            --version "=${CARGO_ABOUT_VERSION}" --locked --features cli
+          python src/bsk_sdk/rust/licenses/generate_rust_licenses.py \
+            --manifest-path examples/custom-atm-extension/Cargo.toml \
+            --config src/bsk_sdk/rust/licenses/about.toml \
+            --output examples/custom-atm-extension/custom_atm/RUST-THIRD-PARTY.txt \
+            --project-name custom-atm-extension --check --require-tool
 
       - name: Build wheel and sdist
         run: |
@@ -72,6 +96,18 @@ jobs:
           python -m build --outdir dist
         env:
           BSK_SDK_AUTO_SYNC: "0"
+
+      - name: Build and test extension with tagged Rust dependencies
+        shell: bash
+        run: |
+          python -m pip install --force-reinstall dist/bsk_sdk-*.whl
+          python -m pip install scikit-build-core pytest
+          python -m build --wheel --no-isolation -o extension-dist \
+            -Cbuild-dir=extension-build examples/custom-atm-extension
+          python -m pip install --no-deps --force-reinstall extension-dist/*.whl
+          python -c "import Basilisk, custom_atm; from custom_atm import rustAtmosphere"
+          python -m pytest \
+            examples/custom-atm-extension/rustAtmosphere/_UnitTest -v
 
       - uses: actions/upload-artifact@v6
         with:
