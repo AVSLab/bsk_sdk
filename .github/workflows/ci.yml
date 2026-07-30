@@ -177,8 +177,11 @@ jobs:
           use-submodule: ${{ inputs.bsk_version == '' && 'true' || 'false' }}
           install-package: "true"
 
-      - name: Point Rust dependencies at the selected BSK checkout
-        run: python tools/sync_rust.py --basilisk-root external/basilisk
+      - name: Align example metadata with the selected BSK checkout
+        run: >-
+          python tools/sync_all.py
+          --basilisk-root external/basilisk
+          --no-sync-submodules
 
       - name: Refresh Rust lockfile for BSK override
         if: ${{ inputs.bsk_version != '' }}
@@ -259,8 +262,11 @@ jobs:
           use-submodule: ${{ inputs.bsk_version == '' && 'true' || 'false' }}
           install-package: "true"
 
-      - name: Point Rust dependencies at the selected BSK checkout
-        run: python tools/sync_rust.py --basilisk-root external/basilisk
+      - name: Align example metadata with the selected BSK checkout
+        run: >-
+          python tools/sync_all.py
+          --basilisk-root external/basilisk
+          --no-sync-submodules
 
       - name: Refresh Rust lockfile for BSK override
         if: ${{ inputs.bsk_version != '' }}
