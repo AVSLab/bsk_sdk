@@ -14,6 +14,9 @@ set(BSK_SDK_ARCH_UTILITIES_DIR "${BSK_SDK_PKG_DIR}/arch_utilities"  CACHE PATH "
 set(BSK_SDK_RUNTIME_MIN_DIR    "${BSK_SDK_PKG_DIR}/runtime_min"     CACHE PATH "bsk-sdk runtime_min sources dir")
 set(BSK_SDK_SWIG_DIR           "${BSK_SDK_PKG_DIR}/swig"            CACHE PATH "bsk-sdk swig dir")
 set(BSK_SDK_TOOLS_DIR          "${BSK_SDK_PKG_DIR}/tools"           CACHE PATH "bsk-sdk tools dir")
+set(BSK_SDK_RUST_DIR           "${BSK_SDK_PKG_DIR}/rust"            CACHE PATH "bsk-sdk Rust support dir")
+set(BSK_SDK_RUST_CMAKE_DIR     "${BSK_SDK_RUST_DIR}/cmake"          CACHE PATH "bsk-sdk synchronized Rust CMake dir")
+set(BSK_SDK_C_MSG_TEMPLATE_DIR "${BSK_SDK_PKG_DIR}/message_templates" CACHE PATH "bsk-sdk C-message templates")
 
 # Provide Eigen3::Eigen from bundled headers so extensions are self-contained.
 if(NOT TARGET Eigen3::Eigen)

@@ -71,6 +71,11 @@ IGNORE_PATTERNS = [
     "_UnitTest",
     "_Documentation",
     "__pycache__",
+    ".DS_Store",
+    # Rust support crates are versioned Cargo dependencies rather than C/C++
+    # headers. The small CMake/template surface needed by extension builds is
+    # synchronized separately by sync_rust.py.
+    "rust",
     # Depends on cfitsio/fitsio.h. Keep the SDK self-contained.
     "haslamBackgroundRadiation.h",
     "*.swg",
@@ -79,6 +84,7 @@ IGNORE_PATTERNS = [
     "*.cpp",
     "*.c",
 ]
+
 
 def main() -> None:
     ap = argparse.ArgumentParser(

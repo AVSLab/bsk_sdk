@@ -37,6 +37,7 @@ Convenience functions below expose installed paths for headers, SWIG
 support files, CMake config, and tools.
 """
 
+import json
 from importlib import resources
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
@@ -86,6 +87,59 @@ def tools_dir() -> str:
     return str(package_root() / "tools")
 
 
+def rust_dir() -> str:
+    """Return the installed SDK directory containing Rust build support."""
+    return str(package_root() / "rust")
+
+
+def rust_support_versions() -> dict[str, str]:
+    """Return synchronized Rust, support-crate, and Corrosion versions."""
+    metadata = Path(rust_dir()) / "support-versions.json"
+    return json.loads(metadata.read_text(encoding="utf-8"))
+
+
+def rust_minimum_version() -> str:
+    """Return the minimum Rust compiler version supported by this SDK."""
+    return rust_support_versions()["BSK_RUST_MIN_VERSION"]
+
+
+def rust_support_crate_version() -> str:
+    """Return the exact ``bsk-*`` support-crate version required by this SDK."""
+    return rust_support_versions()["BSK_RUST_SUPPORT_CRATE_VERSION"]
+
+
+def rust_license_tool_version() -> str:
+    """Return the exact ``cargo-about`` version used for Rust license reports."""
+    return rust_support_versions()["BSK_CARGO_ABOUT_VERSION"]
+
+
+def rust_license_generator() -> str:
+    """Return the reusable Rust third-party license generator path."""
+    return str(Path(rust_dir()) / "licenses" / "generate_rust_licenses.py")
+
+
+def rust_license_config() -> str:
+    """Return the SDK's default ``cargo-about`` policy path."""
+    return str(Path(rust_dir()) / "licenses" / "about.toml")
+
+
+def rust_libclang_dir() -> str:
+    """Return the bundled ``libclang`` directory used on Linux and Windows."""
+    try:
+        import clang
+    except ImportError as error:
+        raise RuntimeError(
+            "The libclang Python package required by bsk-sdk is not installed"
+        ) from error
+
+    directory = Path(clang.__file__).resolve().parent / "native"
+    if not directory.is_dir():
+        raise RuntimeError(
+            f"The libclang Python package has no native library directory: {directory}"
+        )
+    return str(directory)
+
+
 def msg_autosource_dir() -> str:
     return str(package_root() / "tools" / "msgAutoSource")
 
@@ -100,5 +154,13 @@ __all__ = [
     "c_msg_interface_dir",
     "swig_dir",
     "tools_dir",
+    "rust_dir",
+    "rust_support_versions",
+    "rust_minimum_version",
+    "rust_support_crate_version",
+    "rust_license_tool_version",
+    "rust_license_generator",
+    "rust_license_config",
+    "rust_libclang_dir",
     "msg_autosource_dir",
 ]
