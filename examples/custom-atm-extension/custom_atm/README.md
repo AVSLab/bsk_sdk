@@ -2,10 +2,11 @@
 
 This directory defines the Python package that gets installed into the wheel.
 
-It contains the `__init__.py` that registers Basilisk's `cSysModel`, imports
-the generated custom message bindings, and then imports the compiled SWIG
-extension. At build time, scikit-build-core places the generated `.so` / `.pyd`
-binaries and message bindings here.
+It contains the `__init__.py` that runs the generated BSK compatibility guard,
+registers Basilisk's `cSysModel`, imports the generated custom message bindings,
+and then imports the compiled SWIG extensions. At build time,
+scikit-build-core places `_bsk_compatibility.py`, the generated `.so` / `.pyd`
+binaries, and message bindings here.
 
 The pure-Python `numbaAtmosphere.py` module is copied here by
 `bsk_add_python_module()` during CMake configuration. Keeping its source in the
