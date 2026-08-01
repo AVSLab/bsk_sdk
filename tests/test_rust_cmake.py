@@ -198,6 +198,41 @@ def test_workspace_metadata_watches_every_package_manifest(tmp_path: Path) -> No
     subprocess.run([cmake, "-P", str(script)], check=True)
 
 
+def test_message_directories_use_response_file(tmp_path: Path) -> None:
+    """Multiple message paths cross into Cargo without list splitting."""
+    cmake = shutil.which("cmake")
+    assert cmake is not None, "cmake must be available to test the installed helper"
+    helper, rust_cmake = _rust_cmake_paths()
+    core_messages = tmp_path / "core messages"
+    extension_messages = tmp_path / "extension messages"
+    core_messages.mkdir()
+    extension_messages.mkdir()
+    expected_directories = (
+        f"{core_messages.as_posix()};{extension_messages.as_posix()}"
+    )
+    script = tmp_path / "test_message_directory_response.cmake"
+    script.write_text(
+        "\n".join(
+            [
+                f'set(BSK_SDK_RUST_CMAKE_DIR "{rust_cmake.as_posix()}")',
+                f'include("{helper.as_posix()}")',
+                "_bsk_sdk_write_rust_message_directory_file(",
+                '  _response_file "example"',
+                f'  "{core_messages.as_posix()}"',
+                f'  "{extension_messages.as_posix()}")',
+                "file(STRINGS \"${_response_file}\" _directories)",
+                f'if(NOT "${{_directories}}" STREQUAL "{expected_directories}")',
+                '  message(FATAL_ERROR "unexpected response file: ${_directories}")',
+                "endif()",
+                "",
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    subprocess.run([cmake, "-P", str(script)], check=True, cwd=tmp_path)
+
+
 def test_workspace_metadata_rejects_mismatched_support_crates(tmp_path: Path) -> None:
     """A module cannot silently combine SDK and support-crate release lines."""
     cmake = shutil.which("cmake")
