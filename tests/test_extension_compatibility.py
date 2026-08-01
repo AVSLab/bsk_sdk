@@ -20,6 +20,7 @@
 
 from __future__ import annotations
 
+import re
 import shutil
 import subprocess
 import sys
@@ -140,8 +141,21 @@ def test_cmake_helper_generates_version_and_abi_guard(tmp_path: Path) -> None:
     subprocess.run([cmake, "-P", str(script)], check=True)
 
     guard = (output_dir / "_bsk_compatibility.py").read_text(encoding="utf-8")
+    abi_header = (
+        include_dir
+        / "Basilisk"
+        / "architecture"
+        / "utilities"
+        / "bskAbiDescriptor.h"
+    )
+    abi_match = re.search(
+        r"^#define BSK_EXTENSION_ABI_VERSION (\d+)$",
+        abi_header.read_text(encoding="utf-8"),
+        flags=re.MULTILINE,
+    )
+    assert abi_match is not None
     assert 'EXPECTED_BSK_VERSION = "2.12.0"' in guard
-    assert "EXPECTED_EXTENSION_ABI = 1" in guard
+    assert f"EXPECTED_EXTENSION_ABI = {abi_match.group(1)}" in guard
     assert 'EXTENSION_NAME = "test_extension"' in guard
 
 
