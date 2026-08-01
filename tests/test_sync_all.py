@@ -489,15 +489,12 @@ def test_sync_example_versions_updates_all_copyable_manifests(tmp_path: Path) ->
     assert 'tag = ' not in workspace
     assert workspace.count('version = "=0.1.0"') == 2
     assert 'version = "=0.1.0"' in module_manifest
-    assert str(
-        (basilisk_root / "src/architecture/rust/bsk_build").resolve()
-    ) in workspace
-    assert str(
-        (basilisk_root / "src/architecture/rust/bsk_messages").resolve()
-    ) in workspace
-    assert str(
-        (basilisk_root / "src/architecture/rust/bsk_build").resolve()
-    ) in module_manifest
+    crate_root = basilisk_root / "src/architecture/rust"
+    bsk_build_path = (crate_root / "bsk_build").resolve().as_posix()
+    bsk_messages_path = (crate_root / "bsk_messages").resolve().as_posix()
+    assert bsk_build_path in workspace
+    assert bsk_messages_path in workspace
+    assert bsk_build_path in module_manifest
 
 
 def test_sync_example_versions_pins_release_tag(
