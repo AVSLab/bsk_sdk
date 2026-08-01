@@ -215,6 +215,22 @@ function(_bsk_sdk_rust_message_directories out_var)
   set(${out_var} "${_directories}" PARENT_SCOPE)
 endfunction()
 
+# Keep Windows path-list semicolons out of Corrosion's CMake argument lists by
+# passing Cargo one response-file path instead of the directory list itself.
+function(_bsk_sdk_write_rust_message_directory_file out_var target)
+  set(_directories ${ARGN})
+  if(NOT _directories)
+    message(FATAL_ERROR "No Rust C-message interface directories were provided")
+  endif()
+
+  set(_response_directory "${CMAKE_CURRENT_BINARY_DIR}/rust/cmsg")
+  set(_response_file "${_response_directory}/${target}.txt")
+  file(MAKE_DIRECTORY "${_response_directory}")
+  string(JOIN "\n" _response_contents ${_directories})
+  file(WRITE "${_response_file}" "${_response_contents}\n")
+  set(${out_var} "${_response_file}" PARENT_SCOPE)
+endfunction()
+
 function(bsk_add_rust_module)
   set(_one TARGET MANIFEST OUTPUT_DIR)
   set(_multi C_MSG_DIRS CARGO_FEATURES)
@@ -229,13 +245,11 @@ function(bsk_add_rust_module)
   _bsk_find_build_deps()
   _bsk_resolve_sdk_sources(_sdk_runtime)
   _bsk_sdk_rust_message_directories(_c_message_dirs ${BSK_C_MSG_DIRS})
-  cmake_path(CONVERT "${_c_message_dirs}" TO_NATIVE_PATH_LIST _c_message_env NORMALIZE)
-  if(WIN32)
-    string(REPLACE ";" "\\;" _c_message_env "${_c_message_env}")
-  endif()
+  _bsk_sdk_write_rust_message_directory_file(
+    _c_message_file "${BSK_TARGET}" ${_c_message_dirs})
 
   set(_cargo_env
-      "BSK_CMSG_DIRS=${_c_message_env}"
+      "BSK_CMSG_DIRS_FILE=${_c_message_file}"
       "BSK_SRC_ROOT=${BSK_SDK_INCLUDE_DIR}/Basilisk")
   if(UNIX AND NOT APPLE AND CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES)
     cmake_path(CONVERT "${CMAKE_C_IMPLICIT_INCLUDE_DIRECTORIES}"
