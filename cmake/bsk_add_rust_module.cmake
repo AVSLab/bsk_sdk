@@ -36,8 +36,9 @@ function(_bsk_sdk_find_cargo out_var)
 endfunction()
 
 function(_bsk_sdk_register_rust_metadata_dependencies metadata manifest)
-  set(_dependencies "${manifest}")
-  get_filename_component(_workspace_dir "${manifest}" DIRECTORY)
+  cmake_path(CONVERT "${manifest}" TO_CMAKE_PATH_LIST _manifest NORMALIZE)
+  set(_dependencies "${_manifest}")
+  get_filename_component(_workspace_dir "${_manifest}" DIRECTORY)
   list(APPEND _dependencies "${_workspace_dir}/Cargo.lock")
 
   string(JSON _package_count LENGTH "${metadata}" packages)
@@ -46,6 +47,8 @@ function(_bsk_sdk_register_rust_metadata_dependencies metadata manifest)
     foreach(_package_index RANGE 0 ${_last_package})
       string(JSON _package_manifest GET "${metadata}"
              packages ${_package_index} manifest_path)
+      cmake_path(CONVERT "${_package_manifest}"
+                 TO_CMAKE_PATH_LIST _package_manifest NORMALIZE)
       list(APPEND _dependencies "${_package_manifest}")
     endforeach()
   endif()
