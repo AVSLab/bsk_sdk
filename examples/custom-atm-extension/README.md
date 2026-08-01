@@ -59,7 +59,7 @@ install the matching `bsk-sdk==2.X.Y` package.
 python -m pip install extension-dist/*.whl pytest
 python -c "import Basilisk, numba, custom_atm; from custom_atm import numbaAtmosphere, rustAtmosphere"
 python -m pytest examples -v
-BSK_CMSG_DIRS="$(python -c 'import bsk_sdk; print(bsk_sdk.c_msg_interface_dir())'):$(pwd)/extension-build/autoSource/cMsgCInterface" \
+BSK_CMSG_DIRS="$(python -c 'import bsk_sdk; print(bsk_sdk.c_msg_interface_dir())'):$(pwd)/examples/custom-atm-extension/extension-build/autoSource/cMsgCInterface" \
 BSK_SRC_ROOT="$(python -c 'import bsk_sdk; print(bsk_sdk.include_dir())')/Basilisk" \
   cargo test --manifest-path examples/custom-atm-extension/Cargo.toml --workspace --locked
 ```

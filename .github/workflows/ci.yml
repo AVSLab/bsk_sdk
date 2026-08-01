@@ -199,6 +199,9 @@ jobs:
         # --no-isolation so the build inherits the locally installed bsk-sdk wheel,
         # guaranteeing CI always tests the current branch rather than a stale PyPI version.
         shell: bash
+        # Visual Studio otherwise reduces Cargo custom-command failures to MSB8066.
+        env:
+          SKBUILD_BUILD_VERBOSE: ${{ runner.os == 'Windows' }}
         run: |
           pip install build scikit-build-core
           python -m build --wheel --no-isolation -o extension-dist \
@@ -282,7 +285,7 @@ jobs:
       - name: Configure Rust-native test inputs
         shell: bash
         run: |
-          echo "BSK_CMSG_DIRS=$(python -c 'import bsk_sdk; print(bsk_sdk.c_msg_interface_dir())'):${GITHUB_WORKSPACE}/extension-build/autoSource/cMsgCInterface" >> "$GITHUB_ENV"
+          echo "BSK_CMSG_DIRS=$(python -c 'import bsk_sdk; print(bsk_sdk.c_msg_interface_dir())'):${GITHUB_WORKSPACE}/examples/custom-atm-extension/extension-build/autoSource/cMsgCInterface" >> "$GITHUB_ENV"
           echo "BSK_SRC_ROOT=$(python -c 'import bsk_sdk; print(bsk_sdk.include_dir())')/Basilisk" >> "$GITHUB_ENV"
           echo "LIBCLANG_PATH=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_libclang_dir())')" >> "$GITHUB_ENV"
 
