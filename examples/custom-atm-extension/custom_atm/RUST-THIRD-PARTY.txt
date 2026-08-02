@@ -12,7 +12,7 @@ Apache License 2.0 (Apache-2.0)
 -------------------------------
 
 Used by:
-- clang-sys 1.8.1
+- clang-sys 1.9.1
 
 
                                  Apache License
