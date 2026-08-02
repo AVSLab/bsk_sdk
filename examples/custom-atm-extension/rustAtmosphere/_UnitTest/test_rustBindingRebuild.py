@@ -44,6 +44,7 @@ def _bsk_messages_package(cargo: str) -> Path:
         ],
         check=True,
         capture_output=True,
+        encoding="utf-8",
         text=True,
     )
     packages = [
