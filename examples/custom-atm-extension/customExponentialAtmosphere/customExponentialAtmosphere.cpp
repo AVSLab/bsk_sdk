@@ -24,71 +24,58 @@
 
 #include <cmath>
 
-/*! The constructor method initializes the dipole parameters to zero, resuling in a zero magnetic field result by default.
+CustomExponentialAtmosphere::CustomExponentialAtmosphere() = default;
 
- */
-CustomExponentialAtmosphere::CustomExponentialAtmosphere()
+/*! Reset the extension-specific model state. */
+void CustomExponentialAtmosphere::customReset(uint64_t currentSimNanos)
 {
-    //! - Set the default atmospheric properties to yield a zero response
-    this->baseDensity = 0.0;            // [T]
-    this->scaleHeight = 1.0;            // [m]
-    this->planetRadius = 0.0;   // [m]
-    this->localTemp = 1.0; // [K]
-
-    return;
+    (void) currentSimNanos;
+    this->invalidStatusWarningIssued = false;
+    this->bskLogger.bskLog(
+        BSK_INFORMATION,
+        "CustomExponentialAtmosphere initialized with base density %.3g kg/m^3 "
+        "and scale height %.3g m.",
+        this->baseDensity,
+        this->scaleHeight);
 }
 
-/*! Empty destructor method.
-
- */
-CustomExponentialAtmosphere::~CustomExponentialAtmosphere()
+/*! Evaluate the exponential atmosphere at the current spacecraft altitude. */
+void CustomExponentialAtmosphere::evaluateAtmosphereModel(AtmoPropsMsgPayload *msg, double currentTime)
 {
-    return;
-}
+    (void) currentTime;
 
-/*! This method is evaluates the centered dipole magnetic field model.
- @param msg magnetic field message structure
- @param currentTime current time (s)
-
- */
-void CustomExponentialAtmosphere::evaluateAtmosphereModel(AtmoPropsMsgPayload* msg, double currentTime)
-{
-    (void)currentTime;
-
-    static bool firstCall = true;
-    if (firstCall) {
-        this->bskLogger.bskLog(BSK_INFORMATION,
-            "ExponentialAtmosphere (extension): model active; using AtmosphereBase altitude.");
-        firstCall = false;
-    }
-
-    bool statusApplied = false;
-    if (this->atmStatusInMsg_.isLinked()) {
-        const CustomAtmStatusMsgPayload status = this->atmStatusInMsg_(); // payload copy
+    if (this->atmStatusInMsg.isLinked()) {
+        const CustomAtmStatusMsgPayload status = this->atmStatusInMsg();
         if (status.modelValid) {
             this->baseDensity = status.density;
             this->scaleHeight = status.scaleHeight;
-            statusApplied = true;
-        } else {
-            this->bskLogger.bskLog(BSK_WARNING,
-                "ExponentialAtmosphere (extension): CustomAtmStatusMsgPayload invalid; ignoring.");
+            this->invalidStatusWarningIssued = false;
+        } else if (!this->invalidStatusWarningIssued) {
+            this->bskLogger.bskLog(
+                BSK_WARNING,
+                "%s",
+                "CustomExponentialAtmosphere received an invalid status message; "
+                "retaining the configured parameters.");
+            this->invalidStatusWarningIssued = true;
         }
+    }
+
+    if (!std::isfinite(this->baseDensity) || this->baseDensity < 0.0) {
+        this->bskLogger.bskError(
+            "CustomExponentialAtmosphere.baseDensity must be finite and non-negative.");
+    }
+    if (!std::isfinite(this->scaleHeight) || this->scaleHeight <= 0.0) {
+        this->bskLogger.bskError(
+            "CustomExponentialAtmosphere.scaleHeight must be finite and positive.");
+    }
+    if (!std::isfinite(this->localTemp) || this->localTemp < 0.0) {
+        this->bskLogger.bskError(
+            "CustomExponentialAtmosphere.localTemp must be finite and non-negative.");
     }
 
     const double exponent = -(this->orbitAltitude) / this->scaleHeight;
     msg->neutralDensity = this->baseDensity * std::exp(exponent);
     msg->localTemp      = this->localTemp;
-
-    if (statusApplied) {
-        this->bskLogger.bskLog(BSK_INFORMATION,
-            "ExponentialAtmosphere (extension): applied status msg; alt=%.3g m rho=%.3g",
-            this->orbitAltitude, msg->neutralDensity);
-    }
-}
-
-void CustomExponentialAtmosphere::connectAtmStatus(Message<CustomAtmStatusMsgPayload>* msg)
-{
-    this->atmStatusInMsg_.subscribeTo(msg);
 }
 
 /*! Compute a circular-orbit radius using Basilisk's orbitalMotion utility.

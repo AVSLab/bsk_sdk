@@ -20,8 +20,7 @@
 #pragma once
 
 #include "simulation/environment/_GeneralModuleFiles/atmosphereBase.h"
-#include "architecture/utilities/bskLogging.h"
-#include "architecture/messaging/messaging.h"   // ReadFunctor / Message
+#include "architecture/messaging/messaging.h"
 #include "CustomAtmStatusMsgPayload.h"
 
 /*! @brief exponential atmosphere model (extension example) */
@@ -29,10 +28,7 @@ class CustomExponentialAtmosphere : public AtmosphereBase
 {
 public:
     CustomExponentialAtmosphere();
-    ~CustomExponentialAtmosphere();
-
-    // Extension-defined input message wiring (idiomatic Basilisk pattern)
-    void connectAtmStatus(Message<CustomAtmStatusMsgPayload>* msg);
+    ~CustomExponentialAtmosphere() override = default;
 
     /*! @brief Compute the orbital radius for a circular orbit using Basilisk's orbitalMotion utility.
      *
@@ -48,13 +44,13 @@ public:
     double radiusFromCircularElements(double mu, double semiMajorAxis);
 
 private:
-    void evaluateAtmosphereModel(AtmoPropsMsgPayload* msg, double currentTime) override;
-
-    ReadFunctor<CustomAtmStatusMsgPayload> atmStatusInMsg_;
+    void customReset(uint64_t currentSimNanos) override;
+    void evaluateAtmosphereModel(AtmoPropsMsgPayload *msg, double currentTime) override;
+    bool invalidStatusWarningIssued = false;
 
 public:
-    double baseDensity;            //!< [kg/m^3] Density at h=0
-    double scaleHeight;            //!< [m] Exponential characteristic height
+    ReadFunctor<CustomAtmStatusMsgPayload> atmStatusInMsg{}; //!< Extension-defined atmospheric status input
+    double baseDensity = 0.0;      //!< [kg/m^3] Density at h=0
+    double scaleHeight = 1.0;      //!< [m] Exponential characteristic height
     double localTemp = 293.0;      //!< [K] Local atmospheric temperature (constant)
-    BSKLogger bskLogger;           //!< -- BSK Logging
 };

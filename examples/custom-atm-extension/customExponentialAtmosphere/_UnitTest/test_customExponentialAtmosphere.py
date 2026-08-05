@@ -93,6 +93,9 @@ def sim_env():
 def test_extension_instantiates():
     atm = customExponentialAtmosphere.CustomExponentialAtmosphere()
     assert atm is not None
+    assert atm.baseDensity == pytest.approx(0.0)  # [kg/m^3]
+    assert atm.scaleHeight == pytest.approx(1.0)  # [m]
+    assert atm.localTemp == pytest.approx(293.0)  # [K]
 
 
 def test_extension_links_architecture_utilities():
@@ -142,6 +145,24 @@ def test_custom_reader_retains_standalone_message():
     assert reader().density == pytest.approx(2.0)
 
     del reader
+    gc.collect()
+    assert source_reference() is None
+
+
+def test_module_reader_retains_standalone_message():
+    """The module's public reader keeps its custom message source alive."""
+    source = _custom_status_message(2.5)  # [kg/m^3]
+    source_reference = weakref.ref(source)
+    atmosphere = customExponentialAtmosphere.CustomExponentialAtmosphere()
+    atmosphere.atmStatusInMsg.subscribeTo(source)
+
+    del source
+    gc.collect()
+
+    assert source_reference() is not None
+    assert atmosphere.atmStatusInMsg().density == pytest.approx(2.5)
+
+    del atmosphere
     gc.collect()
     assert source_reference() is None
 
@@ -207,11 +228,11 @@ def test_status_message_updates_density(sim_env):
 
     extension_messaging = _extension_messaging()
     status_pl = extension_messaging.CustomAtmStatusMsgPayload()
-    status_pl.density = 2.0
-    status_pl.scaleHeight = 8_500.0
+    status_pl.density = 2.0  # [kg/m^3]
+    status_pl.scaleHeight = 8_500.0  # [m]
     status_pl.modelValid = 1
     status_msg = extension_messaging.CustomAtmStatusMsg().write(status_pl)
-    atmosphere.connectAtmStatus(status_msg)
+    atmosphere.atmStatusInMsg.subscribeTo(status_msg)
 
     sim.ConfigureStopTime(dt)
     sim.ExecuteSimulation()
@@ -228,11 +249,11 @@ def test_invalid_status_message_ignored(sim_env):
     # modelValid=0 — should be ignored, density stays at default baseDensity
     extension_messaging = _extension_messaging()
     status_pl = extension_messaging.CustomAtmStatusMsgPayload()
-    status_pl.density = 999.0
-    status_pl.scaleHeight = 1.0
+    status_pl.density = 999.0  # [kg/m^3]
+    status_pl.scaleHeight = 1.0  # [m]
     status_pl.modelValid = 0
     status_msg = extension_messaging.CustomAtmStatusMsg().write(status_pl)
-    atmosphere.connectAtmStatus(status_msg)
+    atmosphere.atmStatusInMsg.subscribeTo(status_msg)
 
     sim.ConfigureStopTime(dt)
     sim.ExecuteSimulation()
@@ -240,6 +261,53 @@ def test_invalid_status_message_ignored(sim_env):
     rho = _window_density(log)
     expected = 1.225 * math.exp(-400_000.0 / 8_500.0)
     assert rho == pytest.approx(expected, rel=1e-6, abs=0.0)
+
+
+def test_invalid_status_warning_is_rate_limited(sim_env, capfd):
+    """A persistent invalid status message emits one warning per episode."""
+    sim, atmosphere, _, dt = sim_env
+
+    extension_messaging = _extension_messaging()
+    status_pl = extension_messaging.CustomAtmStatusMsgPayload()
+    status_pl.density = 999.0  # [kg/m^3]
+    status_pl.scaleHeight = 1.0  # [m]
+    status_pl.modelValid = 0
+    status_msg = extension_messaging.CustomAtmStatusMsg().write(status_pl)
+    atmosphere.atmStatusInMsg.subscribeTo(status_msg)
+    atmosphere.bskLogger.setLogLevel(bskLogging.BSK_WARNING)
+
+    sim.ConfigureStopTime(2 * dt)
+    sim.ExecuteSimulation()
+
+    captured = capfd.readouterr().out
+    warning = "CustomExponentialAtmosphere received an invalid status message"
+    assert captured.count(warning) == 1
+
+
+@pytest.mark.parametrize(
+    ("density", "scale_height", "message"),
+    # Columns use density [kg/m^3] and scale height [m].
+    [
+        (-1.0, 8_500.0, "baseDensity must be finite and non-negative"),
+        (1.0, 0.0, "scaleHeight must be finite and positive"),
+    ],
+)
+def test_invalid_status_parameters_rejected(
+    sim_env, density: float, scale_height: float, message: str
+):
+    """A valid status flag cannot introduce invalid atmosphere parameters."""
+    sim, atmosphere, _, dt = sim_env
+    extension_messaging = _extension_messaging()
+    status_pl = extension_messaging.CustomAtmStatusMsgPayload()
+    status_pl.density = density  # [kg/m^3]
+    status_pl.scaleHeight = scale_height  # [m]
+    status_pl.modelValid = 1
+    status_msg = extension_messaging.CustomAtmStatusMsg().write(status_pl)
+    atmosphere.atmStatusInMsg.subscribeTo(status_msg)
+
+    sim.ConfigureStopTime(dt)
+    with pytest.raises(bskLogging.BasiliskError, match=message):
+        sim.ExecuteSimulation()
 
 
 def test_recorder_grows_each_step(sim_env):
