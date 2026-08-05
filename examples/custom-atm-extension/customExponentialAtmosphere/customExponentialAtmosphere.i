@@ -51,7 +51,11 @@ from Basilisk.architecture.swig_common_model import *
 // module can still be %included — SWIG wraps them locally and they inherit
 // from the imported SysModel above, keeping the full chain intact.
 %include "simulation/environment/_GeneralModuleFiles/atmosphereBase.h"
-%include "customExponentialAtmosphere.h"
+
+// Extension-defined message. Define the payload before wrapping the module so
+// the public ReadFunctor member resolves to the generated messaging proxy.
+%include "CustomAtmStatusMsgPayload.h"
+struct CustomAtmStatusMsg_C;
 
 %include "architecture/msgPayloadDefC/SpicePlanetStateMsgPayload.h"
 struct SpicePlanetStateMsg_C;
@@ -60,9 +64,7 @@ struct SCStatesMsg_C;
 %include "architecture/msgPayloadDefC/AtmoPropsMsgPayload.h"
 struct AtmoPropsMsg_C;
 
-// Extension-defined message
-%include "CustomAtmStatusMsgPayload.h"
-struct CustomAtmStatusMsg_C;
+%include "customExponentialAtmosphere.h"
 
 // Small C module exercising the SDK-shipped SpicePlanetStateMsg_C interface
 %include "planetStateProbe.h"
