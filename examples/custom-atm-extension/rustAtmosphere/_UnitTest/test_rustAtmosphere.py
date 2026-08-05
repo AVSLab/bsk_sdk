@@ -44,7 +44,7 @@ def _run_module(connect_custom_status: bool = True):
     """Execute three Rust updates and return the module and output recorders."""
     simulation = SimulationBaseClass.SimBaseClass()
     process = simulation.CreateNewProcess("rustProcess")
-    task_period = macros.sec2nano(0.5)  # [s]
+    task_period = macros.sec2nano(0.5)  # [ns]
     process.addTask(simulation.CreateNewTask("rustTask", task_period))
 
     module = rustAtmosphere.rustAtmosphere()
