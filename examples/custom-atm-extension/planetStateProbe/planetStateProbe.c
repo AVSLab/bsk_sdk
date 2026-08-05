@@ -20,23 +20,21 @@
 
 #include "planetStateProbe.h"
 
-#include <string.h>
-
 #include "cMsgCInterface/SpicePlanetStateMsg_C.h"
 
-double roundTripPlanetPosition(double positionX) {
-  /*
-   * Zero the container so _init() connects the message to itself instead of
-   * dereferencing an uninitialized payload pointer.
-   */
-  SpicePlanetStateMsg_C planetMsg;
-  memset(&planetMsg, 0, sizeof(planetMsg));
-  SpicePlanetStateMsg_C_init(&planetMsg);
+double roundTripPlanetPosition(double positionX)
+{
+    /*
+     * Zero the container so _init() connects the message to itself instead of
+     * dereferencing an uninitialized payload pointer.
+     */
+    SpicePlanetStateMsg_C planetMsg = {0};
+    SpicePlanetStateMsg_C_init(&planetMsg);
 
-  SpicePlanetStateMsgPayload payload = SpicePlanetStateMsg_C_zeroMsgPayload();
-  payload.PositionVector[0] = positionX;
-  SpicePlanetStateMsg_C_write(&payload, &planetMsg, 0, 0);
+    SpicePlanetStateMsgPayload payload = SpicePlanetStateMsg_C_zeroMsgPayload();
+    payload.PositionVector[0] = positionX;
+    SpicePlanetStateMsg_C_write(&payload, &planetMsg, 0, 0);
 
-  SpicePlanetStateMsgPayload readBack = SpicePlanetStateMsg_C_read(&planetMsg);
-  return readBack.PositionVector[0];
+    const SpicePlanetStateMsgPayload readBack = SpicePlanetStateMsg_C_read(&planetMsg);
+    return readBack.PositionVector[0];
 }
