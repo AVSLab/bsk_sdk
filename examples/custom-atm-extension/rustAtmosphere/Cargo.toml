@@ -33,4 +33,4 @@ bsk-build.workspace = true
 bsk-messages.workspace = true
 
 [build-dependencies]
-bsk-build = { version = "=0.1.0", path = "../../../external/basilisk/src/architecture/rust/bsk_build", default-features = false, features = ["codegen"] }
+bsk-build = { version = "=0.1.0", git = "https://github.com/AVSLab/basilisk", tag = "v2.12.0", default-features = false, features = ["codegen"] }
