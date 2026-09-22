@@ -1,7 +1,7 @@
 name: Set up Basilisk
 description: >
   Clones the Basilisk source tree and installs the BSK Python package set,
-    beta/alpha/aN/bN => develop branch clone + nightly wheel index
+    beta/alpha/aN/bN => latest nightly wheel and matching develop source
     rc          => release tag clone + TestPyPI
     release     => release tag clone + PyPI
 
@@ -9,49 +9,42 @@ inputs:
   version:
     description: >
       BSK version string (e.g. 2.12.0b0, 2.10.2rc1, 2.11.0).
-      Drives both the git ref to clone and the pip index to install from.
+      Selects the nightly channel for alpha/beta, or the exact release/rc version.
     required: true
   clone-source:
     description: Clone Basilisk source to external/basilisk (needed for sync_all.py)
     default: "true"
   use-submodule:
-    description: Use the repository's pinned external/basilisk submodule instead of cloning a release ref
+    description: Use the recorded submodule for release source; development follows the nightly wheel
     default: "false"
   install-package:
-    description: pip-install the BSK Python package set into the current environment
+    description: Install BSK packages (always required for development source selection)
     default: "true"
+  sdk-revision-file:
+    description: Source revision recorded when building the SDK wheel
+    default: ""
+
+outputs:
+  nightly:
+    description: Whether the latest BSK development wheel was selected
+    value: ${{ steps.bsk.outputs.nightly }}
 
 runs:
   using: composite
   steps:
-    - name: Clone Basilisk source
-      if: inputs.clone-source == 'true' && inputs.use-submodule != 'true'
-      shell: bash
-      run: |
-        BSK="${{ inputs.version }}"
-        if [[ "$BSK" =~ beta|alpha|[0-9]+(a|b)[0-9]+ ]]; then
-          REF=develop
-        else
-          REF="v${BSK}"
-        fi
-        git clone --depth 1 --branch "$REF" \
-          https://github.com/AVSLab/basilisk.git external/basilisk
-
-    - name: Initialize pinned Basilisk source
-      if: inputs.clone-source == 'true' && inputs.use-submodule == 'true'
-      shell: bash
-      run: git submodule update --init --recursive external/basilisk
-
     - name: Install BSK Python package set
-      if: inputs.install-package == 'true'
+      id: bsk
       shell: bash
       run: |
         BSK="${{ inputs.version }}"
         if [[ "$BSK" =~ beta|alpha|[0-9]+(a|b)[0-9]+ ]]; then
+          echo "nightly=true" >> "$GITHUB_OUTPUT"
           pip install --pre \
             --index-url https://avslab.github.io/basilisk/nightly/ \
             --extra-index-url https://pypi.org/simple/ \
             "bsk[all]"
+        elif [[ "${{ inputs.install-package }}" != true ]]; then
+          exit 0
         elif [[ "$BSK" =~ rc ]]; then
           pip install --pre \
             --index-url https://test.pypi.org/simple/ \
@@ -59,4 +52,35 @@ runs:
             "bsk[all]==${BSK}"
         else
           pip install "bsk[all]==${BSK}"
+        fi
+
+    - name: Clone Basilisk source
+      if: inputs.clone-source == 'true' && (inputs.use-submodule != 'true' || steps.bsk.outputs.nightly == 'true')
+      shell: bash
+      run: |
+        BSK="${{ inputs.version }}"
+        if [[ "${{ steps.bsk.outputs.nightly }}" == true ]]; then
+          REF=$(python -c "import Basilisk; info = Basilisk.getBuildInfo()['artifact']; assert info['sourceDirty'] is False; print(info['sourceRevision'])")
+          git init external/basilisk
+          git -C external/basilisk fetch --depth 1 https://github.com/AVSLab/basilisk.git "$REF"
+          git -C external/basilisk checkout --detach FETCH_HEAD
+        else
+          git clone --depth 1 --branch "v${BSK}" \
+            https://github.com/AVSLab/basilisk.git external/basilisk
+        fi
+
+    - name: Initialize pinned Basilisk source
+      if: inputs.clone-source == 'true' && inputs.use-submodule == 'true' && steps.bsk.outputs.nightly != 'true'
+      shell: bash
+      run: git submodule update --init --recursive external/basilisk
+
+    - name: Verify SDK and nightly use the same source
+      if: steps.bsk.outputs.nightly == 'true' && inputs.sdk-revision-file != ''
+      shell: bash
+      env:
+        SDK_REVISION_FILE: ${{ inputs.sdk-revision-file }}
+      run: |
+        if [[ "$(cat "$SDK_REVISION_FILE")" != "$(git -C external/basilisk rev-parse HEAD)" ]]; then
+          echo "::error::BSK nightly changed since the SDK was built. Rerun CI to test matching sources."
+          exit 1
         fi
