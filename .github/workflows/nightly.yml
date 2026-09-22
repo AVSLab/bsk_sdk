@@ -61,7 +61,7 @@ jobs:
 
       - name: Select source matching the BSK nightly wheel
         run: |
-          REF=$(python -c "import Basilisk; info = Basilisk.getBuildInfo()['artifact']; assert info['sourceDirty'] is False; print(info['sourceRevision'])")
+          REF=$(python -c "import Basilisk; info = Basilisk.getBuildInfo()['artifact']; assert info['sourceDirty'] is False; print(info['sourceRevision'], end='')")
           git init external/basilisk
           git -C external/basilisk fetch --depth 1 https://github.com/AVSLab/basilisk.git "$REF"
           git -C external/basilisk checkout --detach FETCH_HEAD
@@ -82,10 +82,10 @@ jobs:
         run: |
           cargo generate-lockfile --manifest-path examples/custom-atm-extension/Cargo.toml
           cargo fetch --manifest-path examples/custom-atm-extension/Cargo.toml --locked
-          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version())')
+          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version(), end="")')
           cargo install cargo-about --version "=${CARGO_ABOUT_VERSION}" --locked --features cli
-          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator())')
-          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config())')
+          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator(), end="")')
+          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config(), end="")')
           python "$GENERATOR" \
             --manifest-path examples/custom-atm-extension/Cargo.toml \
             --config "$CONFIG" \

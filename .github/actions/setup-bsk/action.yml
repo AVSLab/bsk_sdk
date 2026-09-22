@@ -74,7 +74,7 @@ runs:
       run: |
         BSK="${{ inputs.version }}"
         if [[ "${{ steps.bsk.outputs.nightly }}" == true ]]; then
-          REF=$(python -c "import Basilisk; info = Basilisk.getBuildInfo()['artifact']; assert info['sourceDirty'] is False; print(info['sourceRevision'])")
+          REF=$(python -c "import Basilisk; info = Basilisk.getBuildInfo()['artifact']; assert info['sourceDirty'] is False; print(info['sourceRevision'], end='')")
           git init external/basilisk
           git -C external/basilisk fetch --depth 1 https://github.com/AVSLab/basilisk.git "$REF"
           git -C external/basilisk checkout --detach FETCH_HEAD

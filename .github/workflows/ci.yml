@@ -194,10 +194,10 @@ jobs:
         run: |
           cargo generate-lockfile --manifest-path examples/custom-atm-extension/Cargo.toml
           cargo fetch --manifest-path examples/custom-atm-extension/Cargo.toml --locked
-          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version())')
+          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version(), end="")')
           cargo install cargo-about --version "=${CARGO_ABOUT_VERSION}" --locked --features cli
-          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator())')
-          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config())')
+          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator(), end="")')
+          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config(), end="")')
           python "$GENERATOR" \
             --manifest-path examples/custom-atm-extension/Cargo.toml \
             --config "$CONFIG" \
@@ -296,10 +296,10 @@ jobs:
         run: |
           cargo generate-lockfile --manifest-path examples/custom-atm-extension/Cargo.toml
           cargo fetch --manifest-path examples/custom-atm-extension/Cargo.toml --locked
-          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version())')
+          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version(), end="")')
           cargo install cargo-about --version "=${CARGO_ABOUT_VERSION}" --locked --features cli
-          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator())')
-          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config())')
+          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator(), end="")')
+          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config(), end="")')
           python "$GENERATOR" \
             --manifest-path examples/custom-atm-extension/Cargo.toml \
             --config "$CONFIG" \
@@ -330,10 +330,10 @@ jobs:
       - name: Check Rust dependency licenses
         shell: bash
         run: |
-          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version())')
+          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version(), end="")')
           cargo install cargo-about --version "=${CARGO_ABOUT_VERSION}" --locked --features cli
-          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator())')
-          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config())')
+          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator(), end="")')
+          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config(), end="")')
           python "$GENERATOR" \
             --manifest-path examples/custom-atm-extension/Cargo.toml \
             --config "$CONFIG" \
