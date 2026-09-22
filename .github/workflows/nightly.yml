@@ -31,6 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
+          ref: ${{ github.event_name == 'schedule' && 'develop' || github.ref }}
           submodules: false
 
       - uses: actions/setup-python@v6
@@ -39,11 +40,6 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Clone Basilisk develop
-        run: |
-          git clone --depth 1 --branch develop \
-            https://github.com/AVSLab/basilisk.git external/basilisk
-
       - name: Install BSK nightly wheel
         run: |
           pip install --pre \
@@ -51,9 +47,17 @@ jobs:
             --extra-index-url https://pypi.org/simple/ \
             "bsk[all]"
 
+      - name: Select source matching the BSK nightly wheel
+        run: |
+          REF=$(python -c "import Basilisk; info = Basilisk.getBuildInfo()['artifact']; assert info['sourceDirty'] is False; print(info['sourceRevision'])")
+          git init external/basilisk
+          git -C external/basilisk fetch --depth 1 https://github.com/AVSLab/basilisk.git "$REF"
+          git -C external/basilisk checkout --detach FETCH_HEAD
+
       - name: Sync and build SDK
         run: |
           python tools/sync_all.py
+          cargo generate-lockfile --manifest-path examples/custom-atm-extension/Cargo.toml
           pip install build
           python -m build --wheel -o dist
           pip install dist/*.whl
