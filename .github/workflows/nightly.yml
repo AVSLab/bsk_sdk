@@ -45,7 +45,19 @@ jobs:
           pip install --pre \
             --index-url https://avslab.github.io/basilisk/nightly/ \
             --extra-index-url https://pypi.org/simple/ \
+            --report "$RUNNER_TEMP/bsk-nightly-install.json" \
             "bsk[all]"
+
+      - name: Verify BSK came from the nightly index
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          report = json.loads((Path(os.environ["RUNNER_TEMP"]) / "bsk-nightly-install.json").read_text(encoding="utf-8"))
+          urls = [item["download_info"]["url"] for item in report["install"] if item["metadata"]["name"].lower() == "bsk"]
+          if len(urls) != 1 or not urls[0].startswith("https://avslab.github.io/basilisk/nightly/bsk/"):
+              raise SystemExit(f"Expected BSK from the nightly index; pip selected {urls}")
+          PY
 
       - name: Select source matching the BSK nightly wheel
         run: |
