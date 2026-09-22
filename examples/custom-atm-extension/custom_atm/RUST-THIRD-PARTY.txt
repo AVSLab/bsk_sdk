@@ -1413,46 +1413,6 @@ ISC License (ISC)
 -----------------
 
 Used by:
-- bsk-macros 0.1.0
-
-# ISC License
-#
-# Copyright (c) 2026, Autonomous Vehicle Systems Lab, University of Colorado at Boulder
-#
-# Permission to use, copy, modify, and/or distribute this software for any
-# purpose with or without fee is hereby granted, provided that the above
-# copyright notice and this permission notice appear in all copies.
-#
-# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
-# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
-# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
-# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
-# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
-# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
-# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-
-[package]
-name = "bsk-macros"
-version = "0.1.0"
-edition = "2021"
-rust-version.workspace = true
-license.workspace = true
-repository.workspace = true
-homepage.workspace = true
-description = "Procedural macros for native Basilisk Rust modules."
-
-[lib]
-proc-macro = true
-
-[dependencies]
-proc-macro2 = "1"
-quote = "1"
-syn = { version = "2", features = ["full"] }
-
-ISC License (ISC)
------------------
-
-Used by:
 - libloading 0.8.9
 
 Copyright © 2015, Simonas Kazlauskas
@@ -1467,22 +1427,6 @@ AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR 
 WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT,
 NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
 THIS SOFTWARE.
-
-ISC License (ISC)
------------------
-
-Used by:
-- bsk-build 0.1.0
-- bsk-messages 0.1.0
-
-ISC License:
-
-Copyright (c) 2004-2010 by Internet Systems Consortium, Inc. ("ISC")
-Copyright (c) 1995-2003 by Internet Software Consortium
-
-Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND ISC DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL ISC BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 MIT License (MIT)
 -----------------
