@@ -208,15 +208,116 @@ def test_stamp_bsk_version_skips_absent_repository_examples(tmp_path: Path) -> N
     ).read_text(encoding="utf-8")
 
 
+@pytest.mark.parametrize("conflicting_flags", [False, True])
+def test_refresh_example_rejects_invalid_setup_before_sync(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    conflicting_flags: bool,
+) -> None:
+    monkeypatch.setattr(sync_all_module.shutil, "which", lambda _name: None)
+    monkeypatch.setattr(
+        sync_all_module, "should_update_default_submodule",
+        lambda _root: pytest.fail("invalid setup must fail before synchronization"),
+    )
+    arguments = ["--refresh-example"]
+    if conflicting_flags:
+        arguments.append("--skip-example-updates")
+    with pytest.raises(SystemExit) as error:
+        sync_all_module.main(arguments)
+    assert error.value.code == 2
+    message = "not allowed with argument" if conflicting_flags else "requires Cargo on PATH"
+    assert message in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("fetch_fails", [False, True])
+@pytest.mark.parametrize("install_location", ["CARGO_INSTALL_ROOT", "CARGO_HOME", "default"])
+def test_refresh_example_uses_synced_license_tool_and_stops_on_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    fetch_fails: bool,
+    install_location: str,
+) -> None:
+    sdk = tmp_path / "sdk with spaces"
+    rust = sdk / "src" / "bsk_sdk" / "rust"
+    rust.mkdir(parents=True)
+    (rust / "support-versions.json").write_text(
+        json.dumps({"BSK_CARGO_ABOUT_VERSION": "9.8.7"}), encoding="utf-8"
+    )
+    user_home = tmp_path / "user home"
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: user_home))
+    monkeypatch.delenv("CARGO_INSTALL_ROOT", raising=False)
+    monkeypatch.delenv("CARGO_HOME", raising=False)
+    install_root = user_home / ".cargo"
+    if install_location != "default":
+        install_root = tmp_path / "installed tools"
+        monkeypatch.setenv(install_location, str(install_root))
+    if install_location == "CARGO_INSTALL_ROOT":
+        monkeypatch.setenv("CARGO_HOME", str(tmp_path / "different cargo home"))
+
+    # An older tool on PATH must not shadow the newly installed version.
+    old_bin = tmp_path / "old tools"
+    old_bin.mkdir()
+    executable = "cargo-about.exe" if os.name == "nt" else "cargo-about"
+    old_tool = old_bin / executable
+    old_tool.write_text("old tool", encoding="utf-8")
+    old_tool.chmod(0o755)
+    monkeypatch.setenv("PATH", str(old_bin))
+    original_env = os.environ.copy()
+    commands: list[list[str]] = []
+
+    def record(
+        command: list[str], *, cwd: str, check: bool, env: dict[str, str] | None
+    ) -> None:
+        assert cwd == str(sdk)
+        assert check is True
+        commands.append(command)
+        if command[1] == "install":
+            assert env is None
+            destination = Path(command[command.index("--root") + 1]) / "bin" / executable
+            destination.parent.mkdir(parents=True)
+            destination.write_text("pinned tool", encoding="utf-8")
+            destination.chmod(0o755)
+        if command[0] == "/selected python":
+            assert env is not None
+            assert Path(shutil.which("cargo-about", path=env["PATH"])) == install_root / "bin" / executable
+            assert env == {**original_env, "PATH": str(install_root / "bin") + os.pathsep + str(old_bin)}
+        if fetch_fails and command[1] == "fetch":
+            raise subprocess.CalledProcessError(1, command)
+
+    monkeypatch.setattr(sync_all_module.subprocess, "run", record)
+    if fetch_fails:
+        with pytest.raises(subprocess.CalledProcessError):
+            sync_all_module.refresh_example(sdk, "/selected python", "/selected cargo")
+        assert len(commands) == 2
+    else:
+        sync_all_module.refresh_example(sdk, "/selected python", "/selected cargo")
+        assert len(commands) == 4
+        assert commands[2] == [
+            "/selected cargo", "install", "cargo-about", "--version", "=9.8.7",
+            "--locked", "--features", "cli", "--root", str(install_root),
+        ]
+        assert commands[3][:2] == [
+            "/selected python", str(rust / "licenses" / "generate_rust_licenses.py")
+        ]
+        assert "--require-tool" in commands[3]
+        assert str(sdk / "examples" / "custom-atm-extension" / "custom_atm" /
+                   "RUST-THIRD-PARTY.txt") in commands[3]
+
+    manifest = str(sdk / "examples" / "custom-atm-extension" / "Cargo.toml")
+    assert commands[0] == ["/selected cargo", "generate-lockfile", "--manifest-path", manifest]
+    assert commands[1] == ["/selected cargo", "fetch", "--manifest-path", manifest, "--locked"]
+    assert os.environ == original_env
+
+
 @pytest.mark.parametrize(
-    ("skip_example_updates", "expected_update_examples"),
-    [(False, True), (True, False)],
+    ("example_flag", "expected_update_examples"),
+    [(None, True), ("--skip-example-updates", False), ("--refresh-example", True)],
 )
 @pytest.mark.parametrize("local_rust_dependencies", [False, True])
 def test_sync_all_selects_example_update_mode(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
-    skip_example_updates: bool,
+    example_flag: str | None,
     expected_update_examples: bool,
     local_rust_dependencies: bool,
 ) -> None:
@@ -225,6 +326,19 @@ def test_sync_all_selects_example_update_mode(
     basilisk_root.mkdir()
     stamp_calls: list[bool] = []
     commands: list[list[str]] = []
+    refresh_calls: list[tuple[Path, str, str]] = []
+
+    def refresh(sdk: Path, python: str, cargo: str) -> None:
+        assert Path(commands[-1][1]).name == "sync_rust.py"
+        refresh_calls.append((sdk, python, cargo))
+
+    def find_cargo(name: str) -> str:
+        assert example_flag == "--refresh-example"
+        assert name == "cargo"
+        return "/toolchain with spaces/cargo"
+
+    monkeypatch.setattr(sync_all_module.shutil, "which", find_cargo)
+    monkeypatch.setattr(sync_all_module, "refresh_example", refresh)
 
     monkeypatch.setattr(
         sync_all_module,
@@ -243,8 +357,8 @@ def test_sync_all_selects_example_update_mode(
     )
 
     arguments = ["--basilisk-root", str(basilisk_root)]
-    if skip_example_updates:
-        arguments.append("--skip-example-updates")
+    if example_flag:
+        arguments.append(example_flag)
     if local_rust_dependencies:
         arguments.append("--local-rust-dependencies")
     result = sync_all_module.main(arguments)
@@ -254,7 +368,12 @@ def test_sync_all_selects_example_update_mode(
     rust_command = next(
         command for command in commands if command[1].endswith("sync_rust.py")
     )
-    assert ("--skip-example-updates" in rust_command) is skip_example_updates
+    assert ("--skip-example-updates" in rust_command) is (not expected_update_examples)
+    assert refresh_calls == (
+        [(Path(sync_all_module.__file__).resolve().parents[1], sys.executable,
+          "/toolchain with spaces/cargo")]
+        if example_flag == "--refresh-example" else []
+    )
     assert ("--local-rust-dependencies" in rust_command) is local_rust_dependencies
     assert all(
         "--local-rust-dependencies" not in command

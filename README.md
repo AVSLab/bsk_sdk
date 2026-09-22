@@ -330,30 +330,34 @@ requirement to that version. It also selects the Rust support source:
 - development versions use direct paths to the checkout passed through
   `--basilisk-root`.
 
-No manual `Cargo.toml` edit is required when changing SDK branches or preparing
-a release. After selecting a different checkout, run the normal sync command:
+To prepare the example for a new version, synchronize and refresh it in one
+command. No manual version or dependency edits are required:
 
 ```bash
-python3 tools/sync_all.py --basilisk-root <path-to-basilisk>
+python3 tools/sync_all.py --basilisk-root <path-to-basilisk> --refresh-example
 ```
 
-For a numbered or release-candidate build, refresh and commit both the example
-lockfile and its Rust third-party license report after synchronization. The
-dependency source changes from local paths to a Git tag, which can change the
-packages classified as external to the extension:
+For beta, nightly, or feature-branch testing, use the selected checkout for all
+Rust dependencies, even if its version is currently an RC or final version:
 
 ```bash
-cargo generate-lockfile \
-  --manifest-path examples/custom-atm-extension/Cargo.toml
-CARGO_ABOUT_VERSION="$(python -c 'import json; print(json.load(open("src/bsk_sdk/rust/support-versions.json"))["BSK_CARGO_ABOUT_VERSION"])')"
-cargo install cargo-about \
-  --version "=${CARGO_ABOUT_VERSION}" --locked --features cli
-python src/bsk_sdk/rust/licenses/generate_rust_licenses.py \
-  --manifest-path examples/custom-atm-extension/Cargo.toml \
-  --config src/bsk_sdk/rust/licenses/about.toml \
-  --output examples/custom-atm-extension/custom_atm/RUST-THIRD-PARTY.txt \
-  --project-name custom-atm-extension --require-tool
+python3 tools/sync_all.py --basilisk-root <path-to-basilisk> \
+  --local-rust-dependencies --refresh-example
 ```
+
+`--refresh-example` regenerates `Cargo.lock`, fetches the locked dependencies,
+installs the `cargo-about` version specified by the synced Basilisk support, and
+regenerates `custom_atm/RUST-THIRD-PARTY.txt`. It requires a compatible Rust
+toolchain on `PATH` and network access for uncached dependencies. Review and
+commit the updated example files along with the SDK version changes.
+
+The license tool is installed into `CARGO_INSTALL_ROOT` when set, otherwise
+`CARGO_HOME` or `~/.cargo`. The command passes that location explicitly to Cargo
+and adds its `bin` directory to the license generator's `PATH` for you.
+
+Ordinary synchronization still works without Rust: omit `--refresh-example`
+when only SDK artifacts and version metadata are needed. The refresh flag cannot
+be combined with `--skip-example-updates`.
 
 The release workflow rejects a stale manifest, lockfile, or license report,
 then builds and tests the example extension against the tagged dependency
