@@ -87,13 +87,16 @@ jobs:
         run: |
           pip install build
           python -m build --wheel -o dist
+          git -C external/basilisk rev-parse HEAD > dist/basilisk-source-revision.txt
         env:
           BSK_SDK_AUTO_SYNC: "0"
 
       - uses: actions/upload-artifact@v6
         with:
           name: wheel-${{ matrix.os }}-py${{ matrix.python }}
-          path: dist/*.whl
+          path: |
+            dist/*.whl
+            dist/basilisk-source-revision.txt
           retention-days: 1
 
   test:
@@ -171,11 +174,13 @@ jobs:
           echo "version=$(python -c "import bsk_sdk; print(bsk_sdk.bsk_version(), end='')")" >> "$GITHUB_OUTPUT"
 
       - uses: ./.github/actions/setup-bsk
+        id: setup-bsk
         with:
           version: ${{ steps.bsk.outputs.version }}
           clone-source: "true"
           use-submodule: ${{ inputs.bsk_version == '' && 'true' || 'false' }}
           install-package: "true"
+          sdk-revision-file: dist/basilisk-source-revision.txt
 
       - name: Align example metadata with the selected BSK checkout
         run: >-
@@ -183,8 +188,8 @@ jobs:
           --basilisk-root external/basilisk
           --no-sync-submodules
 
-      - name: Refresh Rust lockfile for BSK override
-        if: ${{ inputs.bsk_version != '' }}
+      - name: Refresh Rust lockfile for BSK development or override
+        if: steps.setup-bsk.outputs.nightly == 'true' || inputs.bsk_version != ''
         run: cargo generate-lockfile --manifest-path examples/custom-atm-extension/Cargo.toml
 
       - name: Report environment
@@ -259,11 +264,13 @@ jobs:
             tests/test_sync_all.py -k tagged_git_dependencies -v
 
       - uses: ./.github/actions/setup-bsk
+        id: setup-bsk
         with:
           version: ${{ steps.bsk.outputs.version }}
           clone-source: "true"
           use-submodule: ${{ inputs.bsk_version == '' && 'true' || 'false' }}
           install-package: "true"
+          sdk-revision-file: dist/basilisk-source-revision.txt
 
       - name: Align example metadata with the selected BSK checkout
         run: >-
@@ -271,8 +278,8 @@ jobs:
           --basilisk-root external/basilisk
           --no-sync-submodules
 
-      - name: Refresh Rust lockfile for BSK override
-        if: ${{ inputs.bsk_version != '' }}
+      - name: Refresh Rust lockfile for BSK development or override
+        if: steps.setup-bsk.outputs.nightly == 'true' || inputs.bsk_version != ''
         run: cargo generate-lockfile --manifest-path examples/custom-atm-extension/Cargo.toml
 
       - name: Build Rust extension with the minimum toolchain
@@ -298,13 +305,17 @@ jobs:
 
       - name: Check Rust dependency licenses
         shell: bash
+        env:
+          BSK_NIGHTLY: ${{ steps.setup-bsk.outputs.nightly }}
         run: |
           CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version())')
           cargo install cargo-about --version "=${CARGO_ABOUT_VERSION}" --locked --features cli
           GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator())')
           CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config())')
+          CHECK=(--check)
+          if [[ "$BSK_NIGHTLY" == true ]]; then CHECK=(); fi
           python "$GENERATOR" \
             --manifest-path examples/custom-atm-extension/Cargo.toml \
             --config "$CONFIG" \
             --output examples/custom-atm-extension/custom_atm/RUST-THIRD-PARTY.txt \
-            --project-name custom-atm-extension --check --require-tool
+            --project-name custom-atm-extension "${CHECK[@]}" --require-tool
