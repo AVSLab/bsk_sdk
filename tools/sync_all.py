@@ -209,6 +209,11 @@ def main(arguments: Sequence[str] | None = None) -> int:
         ),
     )
     ap.add_argument(
+        "--local-rust-dependencies",
+        action="store_true",
+        help="Use the selected checkout for example Rust crates, including RC/final versions.",
+    )
+    ap.add_argument(
         "--skip-example-updates",
         action="store_true",
         help=(
@@ -261,6 +266,8 @@ def main(arguments: Sequence[str] | None = None) -> int:
         cmd = [py, str(p)]
         if s == "sync_rust.py" and args.skip_example_updates:
             cmd.append("--skip-example-updates")
+        if s == "sync_rust.py" and args.local_rust_dependencies:
+            cmd.append("--local-rust-dependencies")
         if basilisk_root:
             cmd.extend(["--basilisk-root", basilisk_root])
         run(cmd, cwd=tools_dir)

@@ -68,7 +68,7 @@ jobs:
 
       - name: Sync and build SDK
         run: |
-          python tools/sync_all.py
+          python tools/sync_all.py --local-rust-dependencies
           pip install build
           python -m build --wheel -o dist
           pip install dist/*.whl

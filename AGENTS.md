@@ -103,10 +103,11 @@ the authoritative list of Rust support files required by the build backend and
 installed-wheel tests. Do not duplicate that file list in another checker.
 
 `tools/sync_rust.py` also owns the Rust dependency source in the example
-workspace. It pins final and release-candidate versions to the matching
-Basilisk Git tag and selects the exact local checkout with path dependencies
-for development versions. Do not hand-edit these synchronized dependency
-entries.
+workspace. By default, it pins final and release-candidate versions to the
+matching Basilisk Git tag and selects the exact local checkout with path
+dependencies for development versions. Nightly CI passes
+`--local-rust-dependencies` to use the selected checkout for every version.
+Do not hand-edit these synchronized dependency entries.
 
 ## Build And Test Commands
 

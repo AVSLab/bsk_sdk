@@ -113,6 +113,8 @@ tag. Cargo caches that checkout outside the extension source tree. During SDK
 development, `tools/sync_all.py` instead writes local path dependencies that
 use the exact Basilisk checkout selected with `--basilisk-root`. The default
 `external/basilisk` checkout is recorded with portable relative paths.
+Nightly CI passes `--local-rust-dependencies` to keep using that checkout even
+when its version is RC or final. The same option is available for local testing.
 
 The [`rustAtmosphere`](examples/custom-atm-extension/rustAtmosphere/) example
 reads and writes both a built-in Basilisk message and an extension-owned
