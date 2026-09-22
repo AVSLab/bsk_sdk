@@ -208,6 +208,8 @@ def sync_example_versions(
     versions: dict[str, str],
     bsk_version: str,
     basilisk_root: Path,
+    *,
+    local_dependencies: bool = False,
 ) -> None:
     """Align the copyable Rust extension manifests with synchronized BSK."""
     workspace = sdk_repo_root / "examples" / "custom-atm-extension" / "Cargo.toml"
@@ -219,7 +221,11 @@ def sync_example_versions(
 
     minimum = versions["BSK_RUST_MIN_VERSION"]
     support = versions["BSK_RUST_SUPPORT_CRATE_VERSION"]
-    release_tag = f"v{bsk_version}" if is_publishable_bsk_version(bsk_version) else None
+    release_tag = (
+        f"v{bsk_version}"
+        if is_publishable_bsk_version(bsk_version) and not local_dependencies
+        else None
+    )
     crate_root = basilisk_root / "src" / "architecture" / "rust"
     crate_paths = {
         "bsk-build": crate_root / "bsk_build",
@@ -319,6 +325,11 @@ def main(arguments: Sequence[str] | None = None) -> None:
         help="Path to Basilisk repository root (or set BSK_BASILISK_ROOT).",
     )
     parser.add_argument(
+        "--local-rust-dependencies",
+        action="store_true",
+        help="Use the selected checkout for example Rust crates, including RC/final versions.",
+    )
+    parser.add_argument(
         "--skip-example-updates",
         action="store_true",
         help="Copy installed Rust support without modifying repository examples.",
@@ -335,7 +346,13 @@ def main(arguments: Sequence[str] | None = None) -> None:
         (SDK_RUST_ROOT / SUPPORT_VERSIONS_FILE).read_text(encoding="utf-8")
     )
     if not options.skip_example_updates:
-        sync_example_versions(SDK_REPO_ROOT, versions, bsk_version, basilisk_root)
+        sync_example_versions(
+            SDK_REPO_ROOT,
+            versions,
+            bsk_version,
+            basilisk_root,
+            local_dependencies=options.local_rust_dependencies,
+        )
     print(f"[bsk-sdk] Rust support synchronization complete ({copied} files).")
 
 

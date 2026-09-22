@@ -212,11 +212,13 @@ def test_stamp_bsk_version_skips_absent_repository_examples(tmp_path: Path) -> N
     ("skip_example_updates", "expected_update_examples"),
     [(False, True), (True, False)],
 )
+@pytest.mark.parametrize("local_rust_dependencies", [False, True])
 def test_sync_all_selects_example_update_mode(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     skip_example_updates: bool,
     expected_update_examples: bool,
+    local_rust_dependencies: bool,
 ) -> None:
     """Manual sync maintains examples while artifact-only sync omits them."""
     basilisk_root = tmp_path / "basilisk"
@@ -243,6 +245,8 @@ def test_sync_all_selects_example_update_mode(
     arguments = ["--basilisk-root", str(basilisk_root)]
     if skip_example_updates:
         arguments.append("--skip-example-updates")
+    if local_rust_dependencies:
+        arguments.append("--local-rust-dependencies")
     result = sync_all_module.main(arguments)
 
     assert result == 0
@@ -251,6 +255,12 @@ def test_sync_all_selects_example_update_mode(
         command for command in commands if command[1].endswith("sync_rust.py")
     )
     assert ("--skip-example-updates" in rust_command) is skip_example_updates
+    assert ("--local-rust-dependencies" in rust_command) is local_rust_dependencies
+    assert all(
+        "--local-rust-dependencies" not in command
+        for command in commands
+        if command is not rust_command
+    )
     assert not any(command[0] == "git" for command in commands)
 
 
@@ -375,8 +385,9 @@ def test_standalone_clone_at_default_path_is_not_reset(
     assert not should_update_default_submodule(str(default_root))
 
 
+@pytest.mark.parametrize("local_rust_dependencies", [False, True])
 def test_sync_rust_skip_mode_does_not_require_examples(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, local_rust_dependencies: bool
 ) -> None:
     """Rust support copying succeeds when an sdist has no example workspace."""
     basilisk_root = tmp_path / "basilisk"
@@ -408,7 +419,10 @@ def test_sync_rust_skip_mode_does_not_require_examples(
         lambda *_args, **_kwargs: pytest.fail("example update should be skipped"),
     )
 
-    sync_rust_module.main(["--skip-example-updates"])
+    arguments = ["--skip-example-updates"]
+    if local_rust_dependencies:
+        arguments.append("--local-rust-dependencies")
+    sync_rust_module.main(arguments)
 
 
 def test_sync_rust_support_replaces_generated_tree(tmp_path: Path) -> None:
@@ -465,8 +479,14 @@ def test_sync_rust_support_replaces_generated_tree(tmp_path: Path) -> None:
     assert versions["BSK_CARGO_ABOUT_VERSION"] == "0.9.1"
 
 
-def test_sync_example_versions_updates_all_copyable_manifests(tmp_path: Path) -> None:
-    """Development sync selects the exact local checkout."""
+@pytest.mark.parametrize(
+    ("bsk_version", "local_dependencies"),
+    [("2.12.0b0", False), ("2.12.0rc1", True), ("2.12.0", True)],
+)
+def test_sync_example_versions_updates_all_copyable_manifests(
+    tmp_path: Path, bsk_version: str, local_dependencies: bool
+) -> None:
+    """Development and nightly RC/final sync select the exact local checkout."""
     workspace_path, module_path = _write_example_manifests(tmp_path)
     basilisk_root = tmp_path / "basilisk"
     _write_rust_support_crates(basilisk_root)
@@ -477,8 +497,9 @@ def test_sync_example_versions_updates_all_copyable_manifests(tmp_path: Path) ->
             "BSK_RUST_MIN_VERSION": "1.89",
             "BSK_RUST_SUPPORT_CRATE_VERSION": "0.1.0",
         },
-        "2.12.0b0",
+        bsk_version,
         basilisk_root,
+        local_dependencies=local_dependencies,
     )
 
     workspace = workspace_path.read_text(encoding="utf-8")
@@ -522,7 +543,13 @@ def test_sync_example_versions_pins_release_tag(
     assert 'tag = "v2.12.1"' in module_manifest
 
 
-def test_sync_example_versions_uses_portable_submodule_paths(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    ("bsk_version", "local_dependencies"),
+    [("2.12.0b0", False), ("2.12.0rc1", True), ("2.12.0", True)],
+)
+def test_sync_example_versions_uses_portable_submodule_paths(
+    tmp_path: Path, bsk_version: str, local_dependencies: bool
+) -> None:
     """The default SDK submodule does not introduce machine-specific paths."""
     workspace_path, module_path = _write_example_manifests(tmp_path)
     basilisk_root = tmp_path / "external" / "basilisk"
@@ -534,8 +561,9 @@ def test_sync_example_versions_uses_portable_submodule_paths(tmp_path: Path) -> 
             "BSK_RUST_MIN_VERSION": "1.89",
             "BSK_RUST_SUPPORT_CRATE_VERSION": "0.1.0",
         },
-        "2.12.0b0",
+        bsk_version,
         basilisk_root,
+        local_dependencies=local_dependencies,
     )
 
     workspace = workspace_path.read_text(encoding="utf-8")

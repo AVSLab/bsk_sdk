@@ -83,7 +83,9 @@ jobs:
           echo "BSK source: $(git -C external/basilisk log -1 --oneline)"
 
       - name: Sync artifacts
-        run: python tools/sync_all.py
+        run: >-
+          python tools/sync_all.py
+          ${{ steps.setup-bsk.outputs.nightly == 'true' && '--local-rust-dependencies' || '' }}
 
       - name: Build wheel
         shell: bash
@@ -191,6 +193,7 @@ jobs:
           python tools/sync_all.py
           --basilisk-root external/basilisk
           --no-sync-submodules
+          ${{ steps.setup-bsk.outputs.nightly == 'true' && '--local-rust-dependencies' || '' }}
 
       - name: Refresh Rust lockfile and license report before packaging
         if: steps.setup-bsk.outputs.nightly == 'true' || inputs.bsk_version != ''
@@ -294,6 +297,7 @@ jobs:
           python tools/sync_all.py
           --basilisk-root external/basilisk
           --no-sync-submodules
+          ${{ steps.setup-bsk.outputs.nightly == 'true' && '--local-rust-dependencies' || '' }}
 
       - name: Refresh Rust lockfile and license report before packaging
         if: steps.setup-bsk.outputs.nightly == 'true' || inputs.bsk_version != ''
