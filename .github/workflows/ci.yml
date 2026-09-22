@@ -37,6 +37,8 @@ jobs:
   build:
     name: Build (${{ matrix.os }}, ${{ matrix.python_label }})
     runs-on: ${{ matrix.os }}
+    outputs:
+      nightly: ${{ steps.setup-bsk.outputs.nightly }}
     strategy:
       fail-fast: false
       matrix:
@@ -67,6 +69,7 @@ jobs:
           fi
 
       - uses: ./.github/actions/setup-bsk
+        id: setup-bsk
         with:
           version: ${{ steps.bsk.outputs.version }}
           clone-source: "true"
@@ -177,6 +180,7 @@ jobs:
         id: setup-bsk
         with:
           version: ${{ steps.bsk.outputs.version }}
+          nightly: ${{ needs.build.outputs.nightly }}
           clone-source: "true"
           use-submodule: ${{ inputs.bsk_version == '' && 'true' || 'false' }}
           install-package: "true"
@@ -279,6 +283,7 @@ jobs:
         id: setup-bsk
         with:
           version: ${{ steps.bsk.outputs.version }}
+          nightly: ${{ needs.build.outputs.nightly }}
           clone-source: "true"
           use-submodule: ${{ inputs.bsk_version == '' && 'true' || 'false' }}
           install-package: "true"

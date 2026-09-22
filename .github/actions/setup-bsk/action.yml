@@ -11,6 +11,9 @@ inputs:
       BSK version string (e.g. 2.12.0b0, 2.10.2rc1, 2.11.0).
       Selects the nightly channel for alpha/beta, or the exact release/rc version.
     required: true
+  nightly:
+    description: Keep the nightly channel when a development wheel reports an RC or final version
+    default: "false"
   clone-source:
     description: Clone Basilisk source to external/basilisk (needed for sync_all.py)
     default: "true"
@@ -37,7 +40,7 @@ runs:
       shell: bash
       run: |
         BSK="${{ inputs.version }}"
-        if [[ "$BSK" =~ beta|alpha|[0-9]+(a|b)[0-9]+ ]]; then
+        if [[ "${{ inputs.nightly }}" == true || "$BSK" =~ beta|alpha|[0-9]+(a|b)[0-9]+ ]]; then
           echo "nightly=true" >> "$GITHUB_OUTPUT"
           pip install --pre \
             --index-url https://avslab.github.io/basilisk/nightly/ \
