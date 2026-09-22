@@ -194,22 +194,7 @@ jobs:
           --basilisk-root external/basilisk
           --no-sync-submodules
           ${{ steps.setup-bsk.outputs.nightly == 'true' && '--local-rust-dependencies' || '' }}
-
-      - name: Refresh Rust lockfile and license report before packaging
-        if: steps.setup-bsk.outputs.nightly == 'true' || inputs.bsk_version != ''
-        shell: bash
-        run: |
-          cargo generate-lockfile --manifest-path examples/custom-atm-extension/Cargo.toml
-          cargo fetch --manifest-path examples/custom-atm-extension/Cargo.toml --locked
-          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version(), end="")')
-          cargo install cargo-about --version "=${CARGO_ABOUT_VERSION}" --locked --features cli
-          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator(), end="")')
-          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config(), end="")')
-          python "$GENERATOR" \
-            --manifest-path examples/custom-atm-extension/Cargo.toml \
-            --config "$CONFIG" \
-            --output examples/custom-atm-extension/custom_atm/RUST-THIRD-PARTY.txt \
-            --project-name custom-atm-extension --require-tool
+          ${{ (steps.setup-bsk.outputs.nightly == 'true' || inputs.bsk_version != '') && '--refresh-example' || '' }}
 
       - name: Report environment
         shell: bash
@@ -298,22 +283,7 @@ jobs:
           --basilisk-root external/basilisk
           --no-sync-submodules
           ${{ steps.setup-bsk.outputs.nightly == 'true' && '--local-rust-dependencies' || '' }}
-
-      - name: Refresh Rust lockfile and license report before packaging
-        if: steps.setup-bsk.outputs.nightly == 'true' || inputs.bsk_version != ''
-        shell: bash
-        run: |
-          cargo generate-lockfile --manifest-path examples/custom-atm-extension/Cargo.toml
-          cargo fetch --manifest-path examples/custom-atm-extension/Cargo.toml --locked
-          CARGO_ABOUT_VERSION=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_tool_version(), end="")')
-          cargo install cargo-about --version "=${CARGO_ABOUT_VERSION}" --locked --features cli
-          GENERATOR=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_generator(), end="")')
-          CONFIG=$(python -c 'import bsk_sdk; print(bsk_sdk.rust_license_config(), end="")')
-          python "$GENERATOR" \
-            --manifest-path examples/custom-atm-extension/Cargo.toml \
-            --config "$CONFIG" \
-            --output examples/custom-atm-extension/custom_atm/RUST-THIRD-PARTY.txt \
-            --project-name custom-atm-extension --require-tool
+          ${{ (steps.setup-bsk.outputs.nightly == 'true' || inputs.bsk_version != '') && '--refresh-example' || '' }}
 
       - name: Build Rust extension with the minimum toolchain
         shell: bash

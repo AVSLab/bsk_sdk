@@ -22,8 +22,10 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 from collections.abc import Sequence
@@ -37,9 +39,48 @@ from _sync_paths import (
 )
 
 
-def run(cmd: list[str], cwd: Path) -> None:
+def run(cmd: list[str], cwd: Path, *, env: dict[str, str] | None = None) -> None:
     print(f"\n==> {' '.join(cmd)}", flush=True)
-    subprocess.run(cmd, cwd=str(cwd), check=True)
+    subprocess.run(cmd, cwd=str(cwd), check=True, env=env)
+
+
+def refresh_example(repo_root: Path, python: str, cargo: str) -> None:
+    """Refresh the example lockfile and license report from synced Rust support."""
+    example = repo_root / "examples" / "custom-atm-extension"
+    manifest = str(example / "Cargo.toml")
+    rust_root = repo_root / "src" / "bsk_sdk" / "rust"
+    versions = json.loads(
+        (rust_root / "support-versions.json").read_text(encoding="utf-8")
+    )
+    about_version = versions["BSK_CARGO_ABOUT_VERSION"]
+    install_root = Path(
+        os.environ.get("CARGO_INSTALL_ROOT")
+        or os.environ.get("CARGO_HOME")
+        or Path.home() / ".cargo"
+    ).expanduser().resolve()
+
+    run([cargo, "generate-lockfile", "--manifest-path", manifest], cwd=repo_root)
+    run([cargo, "fetch", "--manifest-path", manifest, "--locked"], cwd=repo_root)
+    run(
+        [cargo, "install", "cargo-about", "--version", f"={about_version}",
+         "--locked", "--features", "cli", "--root", str(install_root)],
+        cwd=repo_root,
+    )
+    # Use the installed tool even if its directory is absent from PATH or an
+    # older cargo-about elsewhere on PATH would otherwise take precedence.
+    license_env = os.environ.copy()
+    license_env["PATH"] = str(install_root / "bin") + os.pathsep + license_env.get("PATH", "")
+    run(
+        [
+            python, str(rust_root / "licenses" / "generate_rust_licenses.py"),
+            "--manifest-path", manifest,
+            "--config", str(rust_root / "licenses" / "about.toml"),
+            "--output", str(example / "custom_atm" / "RUST-THIRD-PARTY.txt"),
+            "--project-name", "custom-atm-extension", "--require-tool",
+        ],
+        cwd=repo_root,
+        env=license_env,
+    )
 
 
 BSK_VERSION_FILE = "docs/source/bskVersion.txt"
@@ -213,7 +254,8 @@ def main(arguments: Sequence[str] | None = None) -> int:
         action="store_true",
         help="Use the selected checkout for example Rust crates, including RC/final versions.",
     )
-    ap.add_argument(
+    example_group = ap.add_mutually_exclusive_group()
+    example_group.add_argument(
         "--skip-example-updates",
         action="store_true",
         help=(
@@ -221,7 +263,20 @@ def main(arguments: Sequence[str] | None = None) -> int:
             "example requirements or Rust manifests."
         ),
     )
+    example_group.add_argument(
+        "--refresh-example",
+        action="store_true",
+        help=(
+            "Also regenerate the example Rust lockfile and license report. "
+            "Requires Cargo; installs the synced cargo-about version."
+        ),
+    )
     args = ap.parse_args(arguments)
+    cargo = None
+    if args.refresh_example:
+        cargo = shutil.which("cargo")
+        if cargo is None:
+            ap.error("--refresh-example requires Cargo on PATH; install a compatible Rust toolchain.")
 
     tools_dir = (
         Path(args.sdk_tools_dir).resolve()
@@ -271,6 +326,9 @@ def main(arguments: Sequence[str] | None = None) -> int:
         if basilisk_root:
             cmd.extend(["--basilisk-root", basilisk_root])
         run(cmd, cwd=tools_dir)
+
+    if cargo is not None:
+        refresh_example(repo_root, py, cargo)
 
     print("\nAll sync steps completed.")
     return 0
