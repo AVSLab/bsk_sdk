@@ -101,11 +101,11 @@ jobs:
         shell: bash
         run: |
           python -m pip install --force-reinstall dist/bsk_sdk-*.whl
-          python -m pip install scikit-build-core pytest
+          python -m pip install scikit-build-core pytest numba
           python -m build --wheel --no-isolation -o extension-dist \
             -Cbuild-dir=extension-build examples/custom-atm-extension
           python -m pip install --no-deps --force-reinstall extension-dist/*.whl
-          python -c "import Basilisk, custom_atm; from custom_atm import rustAtmosphere"
+          python -c "import Basilisk, numba, custom_atm; from custom_atm import rustAtmosphere"
           python -m pytest \
             examples/custom-atm-extension/rustAtmosphere/_UnitTest -v
 
