@@ -85,6 +85,9 @@ typedef struct {{
     MsgHeader *headerPointer;
 }} IncrementalMsg_C;
 int IncrementalMsg_C_isLinked(IncrementalMsg_C *data);
+int IncrementalMsg_C_isWritten(IncrementalMsg_C *data);
+uint64_t IncrementalMsg_C_timeWritten(IncrementalMsg_C *data);
+int64_t IncrementalMsg_C_moduleID(IncrementalMsg_C *data);
 IncrementalMsgPayload IncrementalMsg_C_read(IncrementalMsg_C *source);
 void IncrementalMsg_C_init(IncrementalMsg_C *owner);
 void IncrementalMsg_C_write(IncrementalMsgPayload *data,
