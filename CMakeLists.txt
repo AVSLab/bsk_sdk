@@ -18,20 +18,21 @@ set(BSK_SDK_TOOLS_SRC_DIR         "${CMAKE_CURRENT_SOURCE_DIR}/tools")
 set(BSK_SDK_RUST_SRC_DIR          "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/rust")
 set(BSK_SDK_MESSAGE_TEMPLATE_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/bsk_sdk/message_templates")
 
-find_package(Eigen3 CONFIG QUIET)
+find_package(Eigen3 5.0.1 EXACT CONFIG QUIET)
 if(NOT Eigen3_FOUND)
   include(FetchContent)
   FetchContent_Declare(
     Eigen3
-    URL      https://gitlab.com/libeigen/eigen/-/archive/3.4.0/eigen-3.4.0.tar.gz
-    URL_HASH SHA256=8586084f71f9bde545ee7fa6d00288b264a2b7ac3607b974e54d13e7162c1c72
+    URL      https://gitlab.com/libeigen/eigen/-/archive/5.0.1/eigen-5.0.1.tar.bz2
+    URL_HASH SHA256=e4de6b08f33fd8b8985d2f204381408c660bffa6170ac65b68ae1bd3cd575c0a
     DOWNLOAD_EXTRACT_TIMESTAMP ON
   )
   set(EIGEN_BUILD_DOC     OFF CACHE BOOL "" FORCE)
+  set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
   set(BUILD_TESTING       OFF CACHE BOOL "" FORCE)
   set(EIGEN_BUILD_PKGCONFIG OFF CACHE BOOL "" FORCE)
   FetchContent_MakeAvailable(Eigen3)
-  message(STATUS "bsk-sdk: Eigen3 not found locally — downloaded via FetchContent")
+  message(STATUS "bsk-sdk: Eigen 5.0.1 not found locally - downloaded via FetchContent")
 endif()
 
 # Bundle Eigen3 headers into the wheel so downstream consumers are self-contained.

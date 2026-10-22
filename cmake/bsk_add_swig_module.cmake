@@ -109,7 +109,7 @@ macro(_bsk_find_build_deps)
   find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module NumPy)
 
   if(NOT TARGET Eigen3::Eigen)
-    find_package(Eigen3 CONFIG QUIET)
+    find_package(Eigen3 5.0.1 EXACT CONFIG QUIET)
   endif()
   if(NOT TARGET Eigen3::Eigen)
     if(DEFINED BSK_SDK_INCLUDE_DIR
@@ -119,7 +119,7 @@ macro(_bsk_find_build_deps)
         INTERFACE_INCLUDE_DIRECTORIES "${BSK_SDK_INCLUDE_DIR}/eigen3"
       )
     else()
-      find_package(Eigen3 CONFIG REQUIRED)
+      find_package(Eigen3 5.0.1 EXACT CONFIG REQUIRED)
     endif()
   endif()
 endmacro()

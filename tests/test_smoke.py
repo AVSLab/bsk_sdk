@@ -25,6 +25,7 @@ and the CMake config directory contains the expected files.
 
 from __future__ import annotations
 
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -40,6 +41,17 @@ def test_package_root_exists() -> None:
 def test_include_dirs_exist() -> None:
     for d in bsk_sdk.include_dirs():
         assert Path(d).is_dir(), f"include dir missing: {d}"
+
+
+def test_bundled_eigen_version() -> None:
+    """The installed wheel carries the Eigen release used by Basilisk."""
+    version_header = Path(bsk_sdk.include_dir()) / "eigen3" / "Eigen" / "Version"
+    definitions = dict(re.findall(
+        r"^#define EIGEN_(MAJOR|MINOR|PATCH)_VERSION (\d+)$",
+        version_header.read_text(encoding="utf-8"),
+        flags=re.MULTILINE,
+    ))
+    assert tuple(int(definitions[name]) for name in ("MAJOR", "MINOR", "PATCH")) == (5, 0, 1)
 
 
 def test_swig_dir_exists() -> None:

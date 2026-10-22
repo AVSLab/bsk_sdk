@@ -4,6 +4,11 @@ A self-contained Python wheel that gives external projects everything they need
 to build [Basilisk](https://github.com/AVSLab/basilisk) compatible SWIG extensions
 without vendoring the full simulation codebase.
 
+The SDK bundles Eigen 5.0.1 to match Basilisk's Eigen dependency. SDK builds
+use a local Eigen installation only when its version is exactly 5.0.1;
+otherwise, CMake downloads the pinned release. Rebuild extension wheels when
+updating Eigen in Basilisk and the SDK.
+
 ## Quick start
 
 ```bash
