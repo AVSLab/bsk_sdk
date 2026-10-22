@@ -85,6 +85,7 @@ def test_cmake_config_files_present() -> None:
     assert (config_dir / "bsk-sdkConfig.cmake").exists()
     assert (config_dir / "bsk-sdkConfigVersion.cmake").exists()
     assert (config_dir / "bsk_add_swig_module.cmake").exists()
+    assert (config_dir / "bsk_eigen_version_check.cpp").is_file()
     assert (config_dir / "bsk_add_python_module.cmake").exists()
     assert (config_dir / "bsk_generate_messages.cmake").exists()
     assert (config_dir / "bsk_add_rust_module.cmake").exists()

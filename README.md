@@ -7,7 +7,9 @@ without vendoring the full simulation codebase.
 The SDK bundles Eigen 5.0.1 to match Basilisk's Eigen dependency. SDK builds
 use a local Eigen installation only when its version is exactly 5.0.1;
 otherwise, CMake downloads the pinned release. Rebuild extension wheels when
-updating Eigen in Basilisk and the SDK.
+updating Eigen in Basilisk and the SDK. Extension compilation checks the selected
+Eigen headers and rejects other versions, including those supplied by a parent
+CMake project.
 
 ## Quick start
 

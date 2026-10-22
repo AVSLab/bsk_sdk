@@ -101,6 +101,9 @@ file(WRITE "${BSK_SDK_MSG_AUTOSOURCE_DIR}/cMsgCInterfacePy.i.in" "")
 
 add_library(bsk::sdk_headers INTERFACE IMPORTED GLOBAL)
 add_library(Eigen3::Eigen INTERFACE IMPORTED GLOBAL)
+set_target_properties(Eigen3::Eigen PROPERTIES
+  INTERFACE_INCLUDE_DIRECTORIES "${BSK_SDK_EIGEN_INCLUDE_DIR}"
+)
 
 include("${BSK_SDK_CMAKE_DIR}/bsk_generate_messages.cmake")
 

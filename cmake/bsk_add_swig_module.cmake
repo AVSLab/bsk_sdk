@@ -168,6 +168,10 @@ endfunction()
 # Apply the standard include directories, link libraries, PIC flag, and
 # MSVC multi-config output directory overrides to a SWIG module target.
 function(_bsk_configure_swig_target target_name output_dir link_libs extra_include_dirs)
+  # Check the headers selected by this target, including any parent-provided Eigen.
+  target_sources(${target_name} PRIVATE
+    "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/bsk_eigen_version_check.cpp"
+  )
   target_include_directories(${target_name} PRIVATE
     ${extra_include_dirs}
     "${BSK_SDK_INCLUDE_DIR}"

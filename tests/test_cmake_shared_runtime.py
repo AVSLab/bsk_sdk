@@ -43,6 +43,7 @@ def test_sdk_runtime_is_built_once_and_reused(tmp_path: Path) -> None:
             "-B",
             str(build_dir),
             f"-DBSK_SDK_CMAKE_DIR={bsk_sdk.cmake_config_dir()}",
+            f"-DBSK_SDK_EIGEN_INCLUDE_DIR={Path(bsk_sdk.include_dir()) / 'eigen3'}",
         ],
         check=True,
     )
