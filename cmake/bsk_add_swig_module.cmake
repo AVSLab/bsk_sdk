@@ -148,6 +148,9 @@ function(_bsk_resolve_sdk_sources out_link_libs)
       add_library(bsk::sdk_runtime ALIAS bsk_sdk_runtime_static)
 
       set_target_properties(bsk_sdk_runtime_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+      # Synced C sources use C11 features such as _Static_assert. MSVC needs
+      # an explicit language standard even when the C++ sources use C++17.
+      target_compile_features(bsk_sdk_runtime_static PRIVATE c_std_11)
       target_link_libraries(bsk_sdk_runtime_static PUBLIC bsk::sdk_headers Eigen3::Eigen)
       target_include_directories(bsk_sdk_runtime_static PUBLIC
         "${BSK_SDK_INCLUDE_DIR}/Basilisk/architecture/utilities"

@@ -44,6 +44,10 @@ file(MAKE_DIRECTORY
 file(WRITE "${BSK_SDK_ARCH_MIN_DIR}/arch_min.cpp"
   "int bsk_sdk_test_arch_min(void) { return 1; }\n")
 file(WRITE "${BSK_SDK_ARCH_UTILITIES_DIR}/arch_utility.c"
+  "#if !defined(__STDC_VERSION__) || __STDC_VERSION__ < 201112L\n"
+  "#error The SDK runtime must compile as C11 or newer\n"
+  "#endif\n"
+  "_Static_assert(sizeof(int) >= 2, \"int must have at least 16 bits\");\n"
   "int bsk_sdk_test_arch_utility(void) { return 2; }\n")
 file(WRITE "${BSK_SDK_RUNTIME_MIN_DIR}/runtime_min.cpp"
   "int bsk_sdk_test_runtime_min(void) { return 3; }\n")

@@ -25,9 +25,11 @@ import subprocess
 from pathlib import Path
 
 import bsk_sdk
+import pytest
 
 
-def test_sdk_runtime_is_built_once_and_reused(tmp_path: Path) -> None:
+@pytest.mark.parametrize("c_standard", [99, 17])
+def test_sdk_runtime_is_built_once_and_reused(tmp_path: Path, c_standard: int) -> None:
     cmake = shutil.which("cmake")
     assert cmake is not None, (
         "cmake must be available to test the installed CMake helper"
@@ -44,6 +46,9 @@ def test_sdk_runtime_is_built_once_and_reused(tmp_path: Path) -> None:
             str(build_dir),
             f"-DBSK_SDK_CMAKE_DIR={bsk_sdk.cmake_config_dir()}",
             f"-DBSK_SDK_EIGEN_INCLUDE_DIR={Path(bsk_sdk.include_dir()) / 'eigen3'}",
+            f"-DCMAKE_C_STANDARD={c_standard}",
+            "-DCMAKE_C_STANDARD_REQUIRED=ON",
+            "-DCMAKE_C_EXTENSIONS=OFF",
         ],
         check=True,
     )
