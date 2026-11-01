@@ -183,7 +183,7 @@ contract and the consumer build, not just whether the repository build passes.
 - Version checks must compare Basilisk versions as strings. CMake
   `VERSION_EQUAL` can treat pre-release suffixes incorrectly; use `STREQUAL`
   when validating `bsk-sdk` versus installed `bsk`.
-- SWIG runtime epochs matter. Keep the `swig==4.4.1` dependency, the
+- SWIG runtime epochs matter. Keep the `swig==4.5.1` dependency, the
   pip-installed SWIG discovery, and the SWIG runtime mismatch diagnostics
   aligned with the Basilisk wheel.
 - Do not globally guard all CMake dependency setup. `find_package(SWIG)`,

@@ -5,7 +5,7 @@ backend-path = ["."]
 
 [project]
 name = "bsk-sdk"
-version = "2.12.1"
+version = "2.12.2"
 description = "Vendored Basilisk SDK headers, runtime, and CMake integration for extension authors"
 readme = "README.md"
 license = { text = "ISC" }
@@ -15,10 +15,10 @@ dependencies = [
   # provides a self-contained binary on all platforms and is detected
   # automatically by bsk_add_swig_module.cmake via the Python interpreter.
   #
-  # SWIG 4.4.1+ uses SWIG_RUNTIME_VERSION "5" (epoch 5), which bsk also uses
-  # from 2.10.1 onward. Both bsk and bsk-sdk require >=4.4.1 to stay on epoch 5.
-  # The cmake check in bsk_add_swig_module enforces the match at build time.
-  "swig==4.4.1",
+  # Match the BSK 2.12.2 wheel's SWIG version for its module-init fragments.
+  # SWIG 4.5.1 uses runtime epoch 5; bsk_add_swig_module checks the epoch
+  # against the installed Basilisk wheel at build time.
+  "swig==4.5.1",
   # Required by generatePayloadMetaJson.py, which parses *Payload.h structs at
   # extension build time to produce the JSON metadata consumed by generateSWIGModules.py.
   "libclang>=15.0.6.1,<=18.1.1",

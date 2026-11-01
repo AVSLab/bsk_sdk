@@ -181,7 +181,10 @@ def test_message_source_keep_alive_support_present() -> None:
 
     messaging_impl = (messaging_dir / "newMessaging.ih").read_text()
     assert "self._install_keepalive(source)" in messaging_impl
-    assert "return self._recorder_with_keepalive(self, timeDiff)" in messaging_impl
+    assert (
+        "return self._recorder_with_keepalive(self._storage_owner(), timeDiff)"
+        in messaging_impl
+    )
 
     c_wrapper = (
         Path(bsk_sdk.swig_dir())
