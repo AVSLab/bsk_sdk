@@ -42,7 +42,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Python 3.9 is available through setup-python on Ubuntu 24.04.
+        os: [ubuntu-24.04, macos-latest, windows-latest]
         python: ["3.9", "3.14"]
         include:
           - python: "3.9"
@@ -111,7 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest]
         python: ["3.9", "3.14"]
         include:
           - python: "3.9"
@@ -149,7 +150,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-24.04, macos-latest, windows-latest]
         python: ["3.9", "3.14"]
         include:
           - python: "3.9"
@@ -234,7 +235,7 @@ jobs:
   rust-msrv:
     name: Rust extension (MSRV)
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - uses: actions/checkout@v5
@@ -245,7 +246,7 @@ jobs:
 
       - uses: actions/download-artifact@v7
         with:
-          name: wheel-ubuntu-latest-py3.14
+          name: wheel-ubuntu-24.04-py3.14
           path: dist
 
       - name: Install SDK wheel and read BSK version
