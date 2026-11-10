@@ -154,7 +154,7 @@ def test_update_extension_requirements_pins_build_and_runtime(tmp_path: Path) ->
         "\n".join(
             [
                 "[build-system]",
-                'requires = ["bsk-sdk", "bsk", "swig==4.4.1"]',
+                'requires = ["bsk-sdk", "bsk", "swig==4.5.1"]',
                 "",
                 "[project]",
                 'dependencies = ["bsk>=2.11", "numba"]',
@@ -169,7 +169,7 @@ def test_update_extension_requirements_pins_build_and_runtime(tmp_path: Path) ->
     contents = pyproject.read_text(encoding="utf-8")
     assert contents.count('"bsk==2.12.0b0"') == 2
     assert contents.count('"bsk-sdk==2.12.0b0"') == 1
-    assert '"swig==4.4.1"' in contents
+    assert '"swig==4.5.1"' in contents
     assert '"numba"' in contents
 
 

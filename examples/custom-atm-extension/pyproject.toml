@@ -1,5 +1,5 @@
 [build-system]
-requires = ["scikit-build-core>=0.9.3", "numpy>=1.24", "bsk-sdk==2.13.0b0", "bsk==2.13.0b0", "swig==4.4.1"]
+requires = ["scikit-build-core>=0.9.3", "numpy>=1.24", "bsk-sdk==2.13.0b0", "bsk==2.13.0b0", "swig==4.5.1"]
 build-backend = "scikit_build_core.build"
 
 [project]
